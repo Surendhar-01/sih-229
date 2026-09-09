@@ -13,6 +13,12 @@ export class AiController {
     return this.aiService.classifyMaterial(payload);
   }
 
+  @Post('material-classification')
+  @ApiOperation({ summary: 'AI Material Classification & Identification (v1 alias)' })
+  async materialClassification(@Body() payload: any) {
+    return this.aiService.classifyMaterial(payload);
+  }
+
   @Post('price-analysis')
   @ApiOperation({ summary: 'Dynamic Price Intelligence Analysis' })
   async priceAnalysis(@Body() payload: any) {

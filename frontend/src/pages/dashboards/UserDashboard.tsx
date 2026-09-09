@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { apiClient } from '../../services/api';
-import { Camera, Clock, Sparkles, UserCheck, ShieldCheck, MapPin, KeyRound, ArrowRight } from 'lucide-react';
+import { Camera, Clock, Sparkles, UserCheck, ShieldCheck, MapPin, KeyRound, ArrowRight, Plus, ChevronRight } from 'lucide-react';
 import { AiScannerModal } from '../../components/AiScannerModal';
 import { AudioPriceButton } from '../../components/AudioPriceButton';
 
 export const UserDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [lots, setLots] = useState<any[]>([]);
@@ -14,8 +16,8 @@ export const UserDashboard: React.FC = () => {
   const fetchLots = async () => {
     try {
       setLoading(true);
-      const res: any = await apiClient.get('/lots');
-      setLots(res.data || []);
+      const res: any = await apiClient.get('/lots/my');
+      setLots(res.data || res || []);
     } catch (err) {
       console.error('Failed to load lots:', err);
     } finally {
@@ -29,6 +31,8 @@ export const UserDashboard: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'WAITING_FOR_QUOTE':
+        return <span className="badge badge-cyan">Waiting for Quote</span>;
       case 'MATERIAL_VERIFIED':
       case 'COLLECTED':
       case 'COMPLETED':
@@ -36,6 +40,8 @@ export const UserDashboard: React.FC = () => {
       case 'COLLECTOR_ASSIGNED':
       case 'ON_THE_WAY':
         return <span className="badge badge-amber">{status.replace('_', ' ')}</span>;
+      case 'CANCELLED':
+        return <span className="badge badge-rose">Cancelled</span>;
       default:
         return <span className="badge badge-cyan">{status.replace('_', ' ')}</span>;
     }
@@ -43,7 +49,7 @@ export const UserDashboard: React.FC = () => {
 
   return (
     <div>
-      {/* Welcome & AI Scan Banner */}
+      {/* Welcome & Primary E-Waste Lot Creation Banner */}
       <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
           <div>
@@ -52,16 +58,35 @@ export const UserDashboard: React.FC = () => {
               <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ID: {user?.id}</span>
             </div>
             <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>Welcome, {user?.full_name}!</h1>
-            <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
-              Turn old electronics into certified value. Instant AI scanner benchmarks real scrap commodity rates and dispatches verified collectors.
+            <p style={{ color: 'var(--text-secondary)', marginTop: 4, maxWidth: 650 }}>
+              Turn old electronics into certified value. Our AI vision scanner benchmarks fair market prices, verifies device conditions, and arranges doorstep pickup by certified local runners.
             </p>
           </div>
-          <button className="btn-primary" onClick={() => setIsScannerOpen(true)}>
-            <Camera size={18} />
-            <span>Scan E-Waste with AI</span>
-          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => navigate('/user/lots/create')}
+              style={{ padding: '12px 20px', fontSize: '0.95rem' }}
+            >
+              <Plus size={18} />
+              <span>+ Sell / Recycle E-Waste</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setIsScannerOpen(true)}
+              style={{ padding: '12px 16px', fontSize: '0.95rem' }}
+            >
+              <Camera size={18} />
+              <span>Quick AI Scan</span>
+            </button>
+          </div>
         </div>
       </div>
+
 
       {/* Metric Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px', marginBottom: '24px' }}>
@@ -100,10 +125,18 @@ export const UserDashboard: React.FC = () => {
       {/* Active Lots Section */}
       <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Your Collection Requests</h2>
-          <button onClick={fetchLots} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
-            Refresh Status
-          </button>
+          <div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Your Collection Requests</h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Click any lot to view full audit trail, photos, and tracking status</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button onClick={() => navigate('/user/lots')} className="btn-secondary" style={{ padding: '6px 14px', fontSize: '0.8rem' }}>
+              View All Lots ({lots.length})
+            </button>
+            <button onClick={fetchLots} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
+              Refresh Status
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -111,16 +144,17 @@ export const UserDashboard: React.FC = () => {
         ) : lots.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '32px 16px', background: '#090d16', borderRadius: 8 }}>
             <p style={{ color: 'var(--text-secondary)', marginBottom: 12 }}>No e-waste lots created yet.</p>
-            <button className="btn-primary" onClick={() => setIsScannerOpen(true)}>
-              <Camera size={16} />
-              <span>Scan Your First E-Waste Item</span>
+            <button className="btn-primary" onClick={() => navigate('/user/lots/create')}>
+              <Plus size={16} />
+              <span>Create Your First E-Waste Lot</span>
             </button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {lots.map((lot) => (
+            {lots.slice(0, 5).map((lot) => (
               <div
                 key={lot.id}
+                onClick={() => navigate(`/user/lots/${lot.id}`)}
                 style={{
                   background: '#090d16',
                   borderRadius: 10,
@@ -131,6 +165,8 @@ export const UserDashboard: React.FC = () => {
                   alignItems: 'center',
                   flexWrap: 'wrap',
                   gap: 16,
+                  cursor: 'pointer',
+                  transition: 'border-color 0.2s',
                 }}
               >
                 <div>
@@ -150,6 +186,7 @@ export const UserDashboard: React.FC = () => {
                     )}
                   </div>
                 </div>
+
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, textAlign: 'right' }}>
                   {/* Payout Information */}

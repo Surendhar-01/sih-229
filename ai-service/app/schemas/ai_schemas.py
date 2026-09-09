@@ -35,10 +35,14 @@ class PriceAnalysisResponse(BaseModel):
     material: str
     current_average_price_per_kg: float
     suggested_price_range: Dict[str, float]
-    market_trend: str
-    seven_day_moving_avg: float
-    thirty_day_moving_avg: float
-    breakdown_by_scrap_metal: Dict[str, float]
+    min_value: float = 0.0
+    max_value: float = 0.0
+    estimated_value: float = 0.0
+    currency: str = "INR"
+    market_trend: str = "STABLE"
+    seven_day_moving_avg: float = 0.0
+    thirty_day_moving_avg: float = 0.0
+    breakdown_by_scrap_metal: Dict[str, float] = {}
     is_development_mock: bool = True
 
 class CollectorRecommendationRequest(BaseModel):

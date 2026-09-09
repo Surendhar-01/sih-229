@@ -7,6 +7,12 @@ import { MaterialsService } from './materials.service';
 export class MaterialsController {
   constructor(private readonly materialsService: MaterialsService) {}
 
+  @Get()
+  @ApiOperation({ summary: 'List all e-waste material categories (root)' })
+  async getAllCategories() {
+    return this.materialsService.getCategories();
+  }
+
   @Get('categories')
   @ApiOperation({ summary: 'List all e-waste material categories' })
   async getCategories() {

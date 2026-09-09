@@ -11,6 +11,9 @@ import { ForbiddenPage } from '../pages/auth/ForbiddenPage';
 import { ProfilePage } from '../pages/profile/ProfilePage';
 
 import { UserDashboard } from '../pages/dashboards/UserDashboard';
+import { CreateLotPage } from '../pages/lots/CreateLotPage';
+import { MyLotsPage } from '../pages/lots/MyLotsPage';
+import { LotDetailPage } from '../pages/lots/LotDetailPage';
 import { AggregatorDashboard } from '../pages/dashboards/AggregatorDashboard';
 import { CollectorDashboard } from '../pages/dashboards/CollectorDashboard';
 import { RecyclerDashboard } from '../pages/dashboards/RecyclerDashboard';
@@ -76,9 +79,13 @@ export const AppRoutes: React.FC = () => {
         <Route element={<RoleProtectedRoute allowedRoles={['USER']} />}>
           <Route element={<RoleLayout />}>
             <Route path="/user/dashboard" element={<UserDashboard />} />
+            <Route path="/user/lots" element={<MyLotsPage />} />
+            <Route path="/user/lots/create" element={<CreateLotPage />} />
+            <Route path="/user/lots/:lotId" element={<LotDetailPage />} />
             <Route path="/user/*" element={<UserDashboard />} />
           </Route>
         </Route>
+
 
         {/* ----------------------------------------------------------- */}
         {/* Tier 2: Informal Aggregator Protected Routes                 */}

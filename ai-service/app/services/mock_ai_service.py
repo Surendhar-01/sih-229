@@ -16,41 +16,155 @@ from app.schemas.ai_schemas import (
 class MockAIService:
     @staticmethod
     def classify_image(req: ClassificationRequest) -> ClassificationResponse:
-        return ClassificationResponse(
-            material_category="CRT_DISPLAY",
-            subcategory="CRT_TV_21INCH",
-            condition="INTACT",
-            confidence=0.942,
-            possible_materials=[
-                "Leaded Glass (Barium/Strontium funnel)",
-                "Copper Deflection Yoke",
-                "Printed Circuit Board Assembly",
-                "ABS High-Impact Casing",
-            ],
-            estimated_weight_range={"min_kg": 16.5, "max_kg": 20.0},
-            estimated_value_range={"min_inr": 350.0, "max_inr": 480.0},
-            toxic_elements_detected=["Lead (Pb)", "Cadmium (Cd)", "Phosphor dust"],
-            manual_override_recommended=False,
-            is_development_mock=True,
-        )
+        hint = (req.user_hints or "").lower()
+        img = (req.image_url or req.image_base64 or "").lower()
+
+        # Dynamic detection based on hints/image context
+        if "laptop" in hint or "computer" in hint or "macbook" in hint:
+            return ClassificationResponse(
+                material_category="CONSUMER_ELECTRONICS",
+                subcategory="Laptop Computer",
+                condition="NOT_WORKING",
+                confidence=0.912,
+                possible_materials=["Lithium-Polymer Cell", "Al-Mg Alloy Frame", "Motherboard FR4", "Copper Heatpipe"],
+                estimated_weight_range={"min_kg": 1.8, "max_kg": 2.6},
+                estimated_value_range={"min_inr": 1200.0, "max_inr": 1600.0},
+                toxic_elements_detected=["Lead solder traces", "Lithium"],
+                manual_override_recommended=False,
+                is_development_mock=True,
+            )
+        elif "phone" in hint or "mobile" in hint or "smartphone" in hint:
+            return ClassificationResponse(
+                material_category="CONSUMER_ELECTRONICS",
+                subcategory="Mobile Phone / Smartphone",
+                condition="PARTIALLY_WORKING",
+                confidence=0.865,
+                possible_materials=["OLED Display Panel", "Gold Plated Contacts", "Cobalt Li-Ion Battery", "Rare Earth Neodymium"],
+                estimated_weight_range={"min_kg": 0.15, "max_kg": 0.25},
+                estimated_value_range={"min_inr": 350.0, "max_inr": 550.0},
+                toxic_elements_detected=["Lithium", "Arsenic in microchips"],
+                manual_override_recommended=False,
+                is_development_mock=True,
+            )
+        elif "fridge" in hint or "refrigerator" in hint or "appliance" in hint:
+            return ClassificationResponse(
+                material_category="LARGE_APPLIANCES",
+                subcategory="Single/Double Door Refrigerator",
+                condition="DAMAGED",
+                confidence=0.785,
+                possible_materials=["Hermetic Compressor Steel", "Copper Tubing", "Cyclopentane Insulation", "Condenser Coils"],
+                estimated_weight_range={"min_kg": 35.0, "max_kg": 45.0},
+                estimated_value_range={"min_inr": 1500.0, "max_inr": 2100.0},
+                toxic_elements_detected=["R134a/R600a Refrigerant Gas"],
+                manual_override_recommended=False,
+                is_development_mock=True,
+            )
+        elif "battery" in hint or "inverter" in hint or "lead" in hint:
+            return ClassificationResponse(
+                material_category="ELECTRONIC_COMPONENTS",
+                subcategory="Lead-Acid UPS Inverter Battery",
+                condition="DAMAGED",
+                confidence=0.895,
+                possible_materials=["Pure Lead Sponge", "Sulfuric Acid Electrolyte", "Polypropylene Case"],
+                estimated_weight_range={"min_kg": 12.0, "max_kg": 18.0},
+                estimated_value_range={"min_inr": 900.0, "max_inr": 1400.0},
+                toxic_elements_detected=["Lead (Pb)", "Sulfuric Acid (H2SO4)"],
+                manual_override_recommended=False,
+                is_development_mock=True,
+            )
+        elif "broken" in hint or "scrap" in hint or "unclear" in hint:
+            # Low confidence demonstration (< 0.50)
+            return ClassificationResponse(
+                material_category="CONSUMER_ELECTRONICS",
+                subcategory="Unknown / Mixed Device",
+                condition="SCRAP_BROKEN",
+                confidence=0.420,
+                possible_materials=["Mixed Circuit Boards", "Plastic Housing"],
+                estimated_weight_range={"min_kg": 1.0, "max_kg": 3.0},
+                estimated_value_range={"min_inr": 150.0, "max_inr": 350.0},
+                toxic_elements_detected=["Unidentified electronic components"],
+                manual_override_recommended=True,
+                is_development_mock=True,
+            )
+        else:
+            # Default standard Laptop classification with 91.2% confidence
+            return ClassificationResponse(
+                material_category="CONSUMER_ELECTRONICS",
+                subcategory="Laptop Computer",
+                condition="NOT_WORKING",
+                confidence=0.912,
+                possible_materials=["Al-Mg Alloy Frame", "Motherboard FR4", "Lithium Battery", "Copper"],
+                estimated_weight_range={"min_kg": 2.0, "max_kg": 2.8},
+                estimated_value_range={"min_inr": 1200.0, "max_inr": 1600.0},
+                toxic_elements_detected=["Lead traces", "Lithium"],
+                manual_override_recommended=False,
+                is_development_mock=True,
+            )
 
     @staticmethod
     def analyze_price(req: PriceAnalysisRequest) -> PriceAnalysisResponse:
-        base_rate = 380.0
-        if req.material_category == "PCB_ASSEMBLY":
-            base_rate = 420.0
-        elif req.material_category == "CABLES_WIRES":
-            base_rate = 580.0
-        elif req.material_category == "LI_BATTERY":
-            base_rate = 45.0
+        weight = req.weight_kg or 1.0
+        cat = (req.material_category or "").upper()
+        sub = (req.subcategory or "").lower()
+        condition = (req.condition or "INTACT").upper()
+
+        # Base rate per unit or per kg
+        base_rate = 180.0
+        if "laptop" in sub:
+            base_unit_price = 1400.0
+            min_val = round(base_unit_price * 0.85, 2)
+            max_val = round(base_unit_price * 1.15, 2)
+            est_val = round(base_unit_price, 2)
+            avg_per_kg = round(base_unit_price / max(weight, 1.0), 2)
+        elif "phone" in sub or "mobile" in sub:
+            base_unit_price = 450.0
+            min_val = round(base_unit_price * 0.80, 2)
+            max_val = round(base_unit_price * 1.20, 2)
+            est_val = round(base_unit_price, 2)
+            avg_per_kg = round(base_unit_price / max(weight, 0.2), 2)
+        elif "refrigerator" in sub or "fridge" in sub:
+            base_unit_price = 1800.0
+            min_val = round(base_unit_price * 0.85, 2)
+            max_val = round(base_unit_price * 1.20, 2)
+            est_val = round(base_unit_price, 2)
+            avg_per_kg = round(base_unit_price / max(weight, 30.0), 2)
+        elif "battery" in sub or cat == "LI_BATTERY":
+            rate_kg = 90.0
+            min_val = round(rate_kg * 0.85 * weight, 2)
+            max_val = round(rate_kg * 1.15 * weight, 2)
+            est_val = round(rate_kg * weight, 2)
+            avg_per_kg = rate_kg
+        else:
+            rate_kg = 220.0
+            min_val = round(rate_kg * 0.85 * weight, 2)
+            max_val = round(rate_kg * 1.20 * weight, 2)
+            est_val = round(rate_kg * weight, 2)
+            avg_per_kg = rate_kg
+
+        # Condition multiplier
+        multiplier = 1.0
+        if condition in ("WORKING", "INTACT"):
+            multiplier = 1.15
+        elif condition in ("DAMAGED", "DAMAGED_CRUSHED"):
+            multiplier = 0.80
+        elif condition in ("SCRAP", "SCRAP_BROKEN", "SCRAP_BURNT"):
+            multiplier = 0.65
+
+        min_val = round(min_val * multiplier, 2)
+        max_val = round(max_val * multiplier, 2)
+        est_val = round(est_val * multiplier, 2)
 
         return PriceAnalysisResponse(
             material=req.subcategory or req.material_category,
-            current_average_price_per_kg=base_rate,
-            suggested_price_range={"min": round(base_rate * 0.88, 2), "max": round(base_rate * 1.15, 2)},
+            current_average_price_per_kg=avg_per_kg,
+            suggested_price_range={"min": round(avg_per_kg * 0.88, 2), "max": round(avg_per_kg * 1.15, 2)},
+            min_value=min_val,
+            max_value=max_val,
+            estimated_value=est_val,
+            currency="INR",
             market_trend="STABLE_TO_RISING",
-            seven_day_moving_avg=round(base_rate * 0.98, 2),
-            thirty_day_moving_avg=round(base_rate * 0.95, 2),
+            seven_day_moving_avg=round(avg_per_kg * 0.98, 2),
+            thirty_day_moving_avg=round(avg_per_kg * 0.95, 2),
             breakdown_by_scrap_metal={
                 "copper_scrap_mcx": 780.50,
                 "aluminum_commercial": 210.00,
@@ -59,6 +173,7 @@ class MockAIService:
             },
             is_development_mock=True,
         )
+
 
     @staticmethod
     def recommend_collectors(req: CollectorRecommendationRequest) -> CollectorRecommendationResponse:

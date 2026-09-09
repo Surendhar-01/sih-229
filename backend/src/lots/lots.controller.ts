@@ -24,6 +24,14 @@ export class LotsController {
     return this.lotsService.createLot(user.id, dto, user.full_name);
   }
 
+  @Get('my')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get lots created by current citizen user' })
+  async getMyLots(@CurrentUser() user: any) {
+    return this.lotsService.getMyLots(user.id);
+  }
+
   @Get()
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
@@ -36,6 +44,18 @@ export class LotsController {
   @ApiOperation({ summary: 'Get lot details by ID or lot code (EW-2026-XXXXXX)' })
   async getLotById(@Param('id') id: string) {
     return this.lotsService.getLotById(id);
+  }
+
+  @Post(':id/cancel')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Citizen cancels lot prior to pickup verification' })
+  async cancelLot(
+    @Param('id') id: string,
+    @Body('reason') reason: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.lotsService.cancelLot(id, user.id, reason);
   }
 
   @Patch(':id/status')
@@ -74,3 +94,4 @@ export class LotsController {
     return this.lotsService.assignCollector(id, body.collector_id, body.collector_name, user.id);
   }
 }
+
