@@ -1,6 +1,6 @@
 -- Step 5: informal aggregator review, pricing, and quote workflow.
-ALTER TYPE lot_status_enum ADD VALUE IF NOT EXISTS 'AGGREGATOR_REVIEW';
-ALTER TYPE lot_status_enum ADD VALUE IF NOT EXISTS 'QUOTE_READY';
+DO $$ BEGIN BEGIN ALTER TYPE lot_status_enum ADD VALUE IF NOT EXISTS 'AGGREGATOR_REVIEW'; EXCEPTION WHEN duplicate_object THEN null; END; BEGIN ALTER TYPE lot_status_enum ADD VALUE IF NOT EXISTS 'QUOTE_READY'; EXCEPTION WHEN duplicate_object THEN null; END; END $$;
+
 
 CREATE TABLE IF NOT EXISTS public.aggregator_quotes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

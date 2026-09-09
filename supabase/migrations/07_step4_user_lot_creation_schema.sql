@@ -3,24 +3,23 @@
 -- Migration: 07_step4_user_lot_creation_schema.sql
 -- ==============================================================================
 
--- 1. Ensure lot_status_enum contains initial citizen workflow statuses
+-- 1. Ensure lot_status_enum exists and contains initial citizen workflow statuses
 DO $$ BEGIN
-    ALTER TYPE lot_status_enum ADD VALUE IF NOT EXISTS 'DRAFT';
-EXCEPTION
-    WHEN duplicate_object THEN null;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'lot_status_enum') THEN
+        CREATE TYPE lot_status_enum AS ENUM (
+          'DRAFT', 'CREATED', 'AI_ANALYZED', 'WAITING_FOR_QUOTE', 
+          'AGGREGATOR_REVIEW', 'QUOTE_READY', 'COLLECTOR_ASSIGNED', 
+          'ON_THE_WAY', 'PICKED_UP', 'MATERIAL_VERIFIED', 
+          'AT_AGGREGATOR', 'IN_TRANSIT_TO_RECYCLER', 'AT_RECYCLER', 
+          'RECYCLED', 'SETTLED', 'CANCELLED'
+        );
+    ELSE
+        BEGIN ALTER TYPE lot_status_enum ADD VALUE IF NOT EXISTS 'DRAFT'; EXCEPTION WHEN duplicate_object THEN null; END;
+        BEGIN ALTER TYPE lot_status_enum ADD VALUE IF NOT EXISTS 'AI_ANALYZED'; EXCEPTION WHEN duplicate_object THEN null; END;
+        BEGIN ALTER TYPE lot_status_enum ADD VALUE IF NOT EXISTS 'WAITING_FOR_QUOTE'; EXCEPTION WHEN duplicate_object THEN null; END;
+    END IF;
 END $$;
 
-DO $$ BEGIN
-    ALTER TYPE lot_status_enum ADD VALUE IF NOT EXISTS 'AI_ANALYZED';
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    ALTER TYPE lot_status_enum ADD VALUE IF NOT EXISTS 'WAITING_FOR_QUOTE';
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
 
 -- 2. Extend public.material_lots with Step 4 disposal fields
 ALTER TABLE public.material_lots
