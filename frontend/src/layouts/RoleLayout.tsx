@@ -153,10 +153,42 @@ export const RoleLayout: React.FC = () => {
               </span>
             </div>
 
+            {/* User Profile & Account Status Badge */}
+            <Link
+              to="/profile"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                background: '#1e293b',
+                padding: '6px 12px',
+                borderRadius: 8,
+                border: '1px solid var(--border-color)',
+                textDecoration: 'none',
+                color: '#fff',
+                fontSize: '0.8rem',
+              }}
+            >
+              <UserCheck size={14} color="#10b981" />
+              <span style={{ fontWeight: 600 }}>{user?.full_name?.split(' ')[0] || 'Profile'}</span>
+              <span
+                className="badge"
+                style={{
+                  fontSize: '0.65rem',
+                  padding: '1px 6px',
+                  background: user?.account_status === 'ACTIVE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                  color: user?.account_status === 'ACTIVE' ? '#34d399' : '#f59e0b',
+                  border: 'none',
+                }}
+              >
+                {user?.account_status || 'ACTIVE'}
+              </span>
+            </Link>
+
             {/* Logout button */}
             <button
-              onClick={() => {
-                logout();
+              onClick={async () => {
+                await logout();
                 navigate('/login');
               }}
               style={{

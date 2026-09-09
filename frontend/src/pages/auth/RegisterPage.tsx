@@ -2,47 +2,213 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { UserRole } from '../../types';
-import { UserPlus, ArrowRight } from 'lucide-react';
+import { apiClient } from '../../services/api';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+import { 
+  UserPlus, 
+  ArrowRight, 
+  ShieldAlert, 
+  Building2, 
+  Truck, 
+  Factory, 
+  UserCheck, 
+  Globe, 
+  Lock, 
+  CheckCircle2, 
+  AlertCircle 
+} from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const { setAuth } = useAuthStore();
+  
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('+91');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole>('USER');
+  const [preferredLang, setPreferredLang] = useState('en');
+  const [generalLocation, setGeneralLocation] = useState('');
+  const [cpcbNumber, setCpcbNumber] = useState('');
+  const [vehicleType, setVehicleType] = useState('ELECTRIC_3WHEELER');
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newUser = {
-      id: `usr-${Date.now().toString().slice(-4)}`,
-      email: `${fullName.toLowerCase().replace(/\s+/g, '')}@ewaste.in`,
-      phone,
-      full_name: fullName || 'New Registered User',
-      role: selectedRole,
-      preferred_language: 'en',
-      is_verified: true,
-    };
-    const token = `dev-mock-${selectedRole.toLowerCase()}`;
-    setAuth(newUser, token);
+    setLoading(true);
+    setErrorMessage(null);
 
-    if (selectedRole === 'USER') navigate('/user/dashboard');
-    else if (selectedRole === 'INFORMAL_AGGREGATOR') navigate('/aggregator/dashboard');
-    else if (selectedRole === 'COLLECTION_COLLECTOR') navigate('/collector/dashboard');
-    else if (selectedRole === 'AUTHORIZED_RECYCLER') navigate('/recycler/dashboard');
-    else if (selectedRole === 'GOVERNMENT_ADMIN') navigate('/admin/dashboard');
+    // Strict validation: Government Admin CANNOT register via public form
+    if (selectedRole === 'GOVERNMENT_ADMIN') {
+      setErrorMessage('Government Administrator accounts cannot be self-registered. Internal regulatory credentials required.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // 1. Try Supabase Auth Signup if Supabase is online
+      let supabaseUserId = `usr-${Date.now().toString().slice(-6)}`;
+      let accessToken = `dev-mock-${selectedRole.toLowerCase()}`;
+
+      if (isSupabaseConfigured() && email && password) {
+        try {
+          const { data: authData, error: authErr } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                full_name: fullName,
+                role: selectedRole,
+                phone,
+                preferred_language: preferredLang,
+                general_location: generalLocation,
+              },
+            },
+          });
+          if (authErr) throw authErr;
+          if (authData.user) {
+            supabaseUserId = authData.user.id;
+            accessToken = authData.session?.access_token || accessToken;
+          }
+        } catch (supabaseErr: any) {
+          console.warn('Supabase Auth error, attempting direct backend registration:', supabaseErr.message);
+        }
+      }
+
+      // 2. Call NestJS backend /auth/register
+      const payload = {
+        email: email || `${fullName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'applicant'}@ewaste.in`,
+        phone,
+        password: password || 'SecurePass123!',
+        full_name: fullName,
+        role: selectedRole,
+        preferred_language: preferredLang,
+        general_location: generalLocation,
+        vehicle_type: selectedRole === 'COLLECTION_COLLECTOR' ? vehicleType : undefined,
+        cpcb_authorization_number: selectedRole === 'AUTHORIZED_RECYCLER' ? cpcbNumber : undefined,
+      };
+
+      const res = await apiClient.post('/auth/register', payload);
+
+      const registeredUser = res.data?.data || {
+        id: supabaseUserId,
+        email: payload.email,
+        phone: payload.phone,
+        full_name: payload.full_name,
+        role: selectedRole,
+        account_status: selectedRole === 'USER' ? 'ACTIVE' : 'PENDING',
+        preferred_language: preferredLang,
+        general_location: generalLocation,
+        is_verified: selectedRole === 'USER',
+        vehicle_type: payload.vehicle_type,
+        cpcb_authorization_number: payload.cpcb_authorization_number,
+      };
+
+      // Set auth state
+      setAuth(registeredUser, accessToken);
+
+      // Route based on account status & role
+      if (registeredUser.account_status === 'ACTIVE') {
+        navigate('/user/dashboard');
+      } else {
+        // Professional roles in PENDING state go to pending explanation page
+        navigate('/pending');
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Registration failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div style={{ padding: '32px' }}>
       <div style={{ textAlign: 'center', marginBottom: 24 }}>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Create Account</h2>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Create Platform Account</h2>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 4 }}>
-          Register your role in the National E-Waste Circular Network
+          Register your entity into the National E-Waste Circular Economy Network
         </p>
       </div>
 
+      {errorMessage && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 14px',
+            borderRadius: 8,
+            background: 'rgba(244, 63, 94, 0.15)',
+            color: '#fb7185',
+            fontSize: '0.85rem',
+            marginBottom: 16,
+            border: '1px solid rgba(244, 63, 94, 0.3)',
+          }}
+        >
+          <AlertCircle size={16} />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
       <form onSubmit={handleRegister}>
-        <div style={{ marginBottom: 16 }}>
+        {/* Role Selector Cards */}
+        <div style={{ marginBottom: 18 }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 8, color: '#cbd5e1' }}>
+            Select Stakeholder Category
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+            {[
+              { role: 'USER' as UserRole, label: 'Citizen / Household', icon: <UserCheck size={16} />, activeColor: '#10b981' },
+              { role: 'COLLECTION_COLLECTOR' as UserRole, label: 'Collection Collector', icon: <Truck size={16} />, activeColor: '#38bdf8' },
+              { role: 'INFORMAL_AGGREGATOR' as UserRole, label: 'Informal Aggregator', icon: <Building2 size={16} />, activeColor: '#f59e0b' },
+              { role: 'AUTHORIZED_RECYCLER' as UserRole, label: 'Authorized Recycler', icon: <Factory size={16} />, activeColor: '#c084fc' },
+            ].map((item) => (
+              <button
+                key={item.role}
+                type="button"
+                onClick={() => setSelectedRole(item.role)}
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  border: selectedRole === item.role ? `2px solid ${item.activeColor}` : '1px solid var(--border-color)',
+                  background: selectedRole === item.role ? 'rgba(30, 41, 59, 0.9)' : '#090d16',
+                  color: selectedRole === item.role ? '#fff' : '#94a3b8',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  textAlign: 'left',
+                }}
+              >
+                <div style={{ color: item.activeColor }}>{item.icon}</div>
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Role Status Note */}
+          <div
+            style={{
+              marginTop: 10,
+              padding: '8px 12px',
+              borderRadius: 6,
+              background: selectedRole === 'USER' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+              border: `1px solid ${selectedRole === 'USER' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+              fontSize: '0.75rem',
+              color: selectedRole === 'USER' ? '#34d399' : '#f59e0b',
+            }}
+          >
+            {selectedRole === 'USER'
+              ? '✓ Immediate Active Access: Citizen accounts can instantly schedule doorstep pickups.'
+              : '⏳ Regulatory Review Required: Professional accounts are created in PENDING status until approved by regulatory authorities.'}
+          </div>
+        </div>
+
+        {/* Full Name / Legal Name */}
+        <div style={{ marginBottom: 14 }}>
           <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
             Full Name / Enterprise Name
           </label>
@@ -51,48 +217,137 @@ export const RegisterPage: React.FC = () => {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
-            placeholder="e.g. Ramesh Babu or Dharavi Scrap Hub"
+            placeholder="e.g. Anita Sharma or Dharavi Scrap Hub"
             style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
           />
         </div>
 
-        <div style={{ marginBottom: 16 }}>
+        {/* Phone & Email Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 14 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
+              Mobile Phone
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+              placeholder="+91 9876543210"
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
+              Email Address
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="user@example.com"
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+            />
+          </div>
+        </div>
+
+        {/* Password */}
+        <div style={{ marginBottom: 14 }}>
           <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
-            Mobile Number (for OTP & Payouts)
+            Account Password
           </label>
           <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             required
-            placeholder="+91 9876543210"
+            placeholder="••••••••••••"
             style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
           />
         </div>
 
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
-            Primary Platform Role
-          </label>
-          <select
-            value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value as UserRole)}
-            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#1e293b', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
-          >
-            <option value="USER">Citizen / Household Consumer</option>
-            <option value="INFORMAL_AGGREGATOR">Informal Aggregator (Scrap Godown)</option>
-            <option value="COLLECTION_COLLECTOR">Collection Collector / Kabadiwala</option>
-            <option value="AUTHORIZED_RECYCLER">Authorized Recycler (CPCB Registered)</option>
-            <option value="GOVERNMENT_ADMIN">Government Admin (CPCB / SPCB)</option>
-          </select>
+        {/* Preferred Language & Operating Location */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 14 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
+              Preferred Language
+            </label>
+            <select
+              value={preferredLang}
+              onChange={(e) => setPreferredLang(e.target.value)}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+            >
+              <option value="en">English</option>
+              <option value="hi">हिन्दी (Hindi)</option>
+              <option value="mr">मराठी (Marathi)</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
+              General Operating Area
+            </label>
+            <input
+              type="text"
+              value={generalLocation}
+              onChange={(e) => setGeneralLocation(e.target.value)}
+              required
+              placeholder="e.g. Andheri West, Mumbai"
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+            />
+          </div>
         </div>
 
-        <button type="submit" className="btn-primary" style={{ width: '100%' }}>
+        {/* Dynamic Fields for Professional Roles */}
+        {selectedRole === 'COLLECTION_COLLECTOR' && (
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#38bdf8' }}>
+              Collection Transport Type
+            </label>
+            <select
+              value={vehicleType}
+              onChange={(e) => setVehicleType(e.target.value)}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+            >
+              <option value="ELECTRIC_3WHEELER">Electric 3-Wheeler / E-Rickshaw Cargo</option>
+              <option value="BICYCLE">Bicycle with Carrier Basket</option>
+              <option value="MINI_TRUCK">Light Commercial Vehicle (Tata Ace / Pickup)</option>
+              <option value="HAND_CART">Hand Cart (Pehla)</option>
+            </select>
+          </div>
+        )}
+
+        {selectedRole === 'AUTHORIZED_RECYCLER' && (
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#c084fc' }}>
+              CPCB / SPCB Authorization License Number
+            </label>
+            <input
+              type="text"
+              value={cpcbNumber}
+              onChange={(e) => setCpcbNumber(e.target.value)}
+              required
+              placeholder="e.g. CPCB-EPR-REG-MH-2026/0014"
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+            />
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn-primary"
+          style={{ width: '100%', marginTop: 8, padding: '12px' }}
+        >
           <UserPlus size={16} />
-          <span>Register & Enter Dashboard</span>
+          <span>{loading ? 'Submitting Application...' : 'Register Platform Account'}</span>
         </button>
       </form>
 
+      {/* Footer Security Notice */}
       <div style={{ marginTop: 20, textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
         Already registered?{' '}
         <Link to="/login" style={{ color: '#10b981', fontWeight: 600, textDecoration: 'none' }}>
@@ -102,3 +357,4 @@ export const RegisterPage: React.FC = () => {
     </div>
   );
 };
+

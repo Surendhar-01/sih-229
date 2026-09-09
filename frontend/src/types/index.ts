@@ -31,16 +31,41 @@ export type LotStatus =
   | 'FLAGGED'
   | 'FAILED';
 
+export type AccountStatus =
+  | 'PENDING'
+  | 'ACTIVE'
+  | 'SUSPENDED'
+  | 'REJECTED'
+  | 'DEACTIVATED';
+
 export interface UserProfile {
   id: string;
   email?: string;
   phone: string;
   full_name: string;
   role: UserRole;
+  account_status: AccountStatus;
   preferred_language: string;
+  general_location?: string;
   avatar_url?: string;
   is_verified: boolean;
+  approval_notes?: string;
+  verified_by?: string;
+  verified_at?: string;
+  created_at?: string;
+  updated_at?: string;
+  // Specific role metadata
+  vehicle_type?: string;
+  cpcb_authorization_number?: string;
+  business_name?: string;
 }
+
+export interface PendingAccountItem extends UserProfile {
+  materials_handled?: string[];
+  service_area?: string;
+  annual_capacity_mt?: number;
+}
+
 
 export interface MaterialCategory {
   id: number;

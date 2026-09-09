@@ -1,5 +1,5 @@
 -- ==============================================================================
--- E-WASTE MANAGEMENT PLATFORM - COMPLETE SUPABASE DATABASE SETUP
+-- E-WASTE MANAGEMENT PLATFORM - COMPLETE SUPABASE DATABASE SETUP (UPDATED STEP 3)
 -- Paste and run this script in the Supabase Dashboard SQL Editor
 -- ==============================================================================
 
@@ -8,6 +8,18 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "postgis";
 
 -- 2. Enumerated Types
+DO $$ BEGIN
+    CREATE TYPE account_status_enum AS ENUM (
+        'PENDING',
+        'ACTIVE',
+        'SUSPENDED',
+        'REJECTED',
+        'DEACTIVATED'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
 DO $$ BEGIN
     CREATE TYPE lot_status_enum AS ENUM (
         'CREATED',
@@ -47,6 +59,11 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     full_name VARCHAR(150) NOT NULL,
     preferred_language VARCHAR(10) DEFAULT 'en' CHECK (preferred_language IN ('en', 'hi', 'mr', 'ta', 'te', 'kn', 'bn')),
     avatar_url TEXT,
+    account_status account_status_enum DEFAULT 'PENDING',
+    general_location VARCHAR(150) DEFAULT 'India',
+    approved_by UUID REFERENCES public.profiles(id),
+    approved_at TIMESTAMPTZ,
+    rejection_reason TEXT,
     is_active BOOLEAN DEFAULT true,
     is_verified BOOLEAN DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
@@ -64,6 +81,8 @@ CREATE TABLE IF NOT EXISTS public.user_roles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     role_id INT NOT NULL REFERENCES public.roles(id) ON DELETE CASCADE,
+    assigned_by UUID REFERENCES public.profiles(id),
+    status account_status_enum DEFAULT 'ACTIVE',
     assigned_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
     UNIQUE(user_id, role_id)
 );
@@ -75,10 +94,13 @@ CREATE TABLE IF NOT EXISTS public.aggregators (
     city VARCHAR(100) NOT NULL,
     state VARCHAR(100) NOT NULL,
     pincode VARCHAR(10) NOT NULL,
+    operating_area VARCHAR(150),
     operating_pincodes VARCHAR(10)[] DEFAULT '{}',
+    materials_handled TEXT[] DEFAULT '{"CRT_DISPLAY", "PCB_ASSEMBLY", "LI_BATTERY", "CABLES_WIRES"}',
     location GEOGRAPHY(Point, 4326) NOT NULL,
     storage_capacity_sqft NUMERIC(10, 2) DEFAULT 500.0,
     is_formalized_partner BOOLEAN DEFAULT false,
+    verification_status account_status_enum DEFAULT 'PENDING',
     rating NUMERIC(3, 2) DEFAULT 5.00,
     total_collections_handled INT DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
@@ -90,9 +112,11 @@ CREATE TABLE IF NOT EXISTS public.collectors (
     aggregator_id UUID REFERENCES public.aggregators(id) ON DELETE SET NULL,
     vehicle_type VARCHAR(50) DEFAULT 'BICYCLE' CHECK (vehicle_type IN ('BICYCLE', 'MOTORCYCLE', 'AUTO_RICKSHAW', 'MINI_TRUCK', 'ON_FOOT')),
     vehicle_registration_no VARCHAR(30),
+    operating_area VARCHAR(150),
     current_location GEOGRAPHY(Point, 4326),
     service_radius_km NUMERIC(5, 2) DEFAULT 10.00,
     is_available BOOLEAN DEFAULT true,
+    verification_status account_status_enum DEFAULT 'PENDING',
     active_jobs_count INT DEFAULT 0,
     completion_rate NUMERIC(5, 2) DEFAULT 100.00,
     rating NUMERIC(3, 2) DEFAULT 5.00,
@@ -105,12 +129,15 @@ CREATE TABLE IF NOT EXISTS public.recyclers (
     id UUID PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
     company_name VARCHAR(255) NOT NULL,
     facility_address TEXT NOT NULL,
+    facility_location VARCHAR(200),
     city VARCHAR(100) NOT NULL,
     state VARCHAR(100) NOT NULL,
     pincode VARCHAR(10) NOT NULL,
     cpcb_authorization_number VARCHAR(100) UNIQUE NOT NULL,
     cpcb_valid_upto DATE NOT NULL,
     is_cpcb_authorized BOOLEAN DEFAULT true,
+    authorization_status VARCHAR(50) DEFAULT 'SUBMITTED_FOR_VERIFICATION',
+    verification_status account_status_enum DEFAULT 'PENDING',
     authorized_schedule_codes TEXT[] DEFAULT '{"ITEW1", "ITEW2", "CEEW1", "CEEW2"}',
     annual_capacity_metric_tons NUMERIC(12, 2) NOT NULL DEFAULT 5000.0,
     location GEOGRAPHY(Point, 4326) NOT NULL,
@@ -415,36 +442,53 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 6. Trigger on auth.users for profile creation
+-- 6. Trigger on auth.users for safe profile creation & approval requirements
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
+    requested_role_name VARCHAR;
     assigned_role_name VARCHAR;
     target_role_id INT;
+    initial_status account_status_enum;
 BEGIN
-    assigned_role_name := COALESCE(NEW.raw_user_meta_data->>'role', 'USER');
+    requested_role_name := UPPER(COALESCE(NEW.raw_user_meta_data->>'role', 'USER'));
+
+    -- Block public admin registration attempt
+    IF requested_role_name = 'GOVERNMENT_ADMIN' THEN
+        assigned_role_name := 'USER';
+        initial_status := 'ACTIVE';
+    ELSIF requested_role_name IN ('INFORMAL_AGGREGATOR', 'COLLECTION_COLLECTOR', 'AUTHORIZED_RECYCLER') THEN
+        assigned_role_name := requested_role_name;
+        initial_status := 'PENDING';
+    ELSE
+        assigned_role_name := 'USER';
+        initial_status := 'ACTIVE';
+    END IF;
 
     INSERT INTO public.profiles (
-        id, phone, email, full_name, preferred_language, avatar_url, is_active, is_verified
+        id, phone, email, full_name, preferred_language, avatar_url, account_status, general_location, is_active, is_verified
     ) VALUES (
         NEW.id,
         COALESCE(NEW.phone, NEW.raw_user_meta_data->>'phone', 'NA_' || SUBSTRING(NEW.id::TEXT, 1, 10)),
         NEW.email,
-        COALESCE(NEW.raw_user_meta_data->>'full_name', 'Citizen User'),
+        COALESCE(NEW.raw_user_meta_data->>'full_name', 'User'),
         COALESCE(NEW.raw_user_meta_data->>'preferred_language', 'en'),
         NEW.raw_user_meta_data->>'avatar_url',
-        true,
-        false
+        initial_status,
+        COALESCE(NEW.raw_user_meta_data->>'general_location', 'India'),
+        (initial_status = 'ACTIVE'),
+        (initial_status = 'ACTIVE')
     )
     ON CONFLICT (id) DO UPDATE SET
-        email = EXCLUDED.email,
-        phone = EXCLUDED.phone,
-        full_name = EXCLUDED.full_name;
+        email = COALESCE(EXCLUDED.email, profiles.email),
+        phone = COALESCE(EXCLUDED.phone, profiles.phone),
+        full_name = COALESCE(EXCLUDED.full_name, profiles.full_name),
+        preferred_language = COALESCE(EXCLUDED.preferred_language, profiles.preferred_language);
 
     SELECT id INTO target_role_id FROM public.roles WHERE name = assigned_role_name;
     IF target_role_id IS NOT NULL THEN
-        INSERT INTO public.user_roles (user_id, role_id)
-        VALUES (NEW.id, target_role_id)
+        INSERT INTO public.user_roles (user_id, role_id, status)
+        VALUES (NEW.id, target_role_id, initial_status)
         ON CONFLICT (user_id, role_id) DO NOTHING;
     END IF;
 
