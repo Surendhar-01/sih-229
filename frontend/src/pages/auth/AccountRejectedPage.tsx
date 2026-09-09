@@ -11,7 +11,7 @@ export const AccountRejectedPage: React.FC = () => {
     <div
       style={{
         minHeight: '100vh',
-        background: '#0a0e17',
+        background: '#f1f5f9',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -58,12 +58,12 @@ export const AccountRejectedPage: React.FC = () => {
           STATUS: REJECTED
         </span>
 
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', marginTop: 12 }}>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: 12 }}>
           Registration Application Declined
         </h1>
 
-        <p style={{ fontSize: '0.9rem', color: '#94a3b8', marginTop: 10, lineHeight: 1.6 }}>
-          Your application for the role <strong style={{ color: '#fff' }}>{user?.role?.replace('_', ' ')}</strong> could
+        <p style={{ fontSize: '0.9rem', color: '#475569', marginTop: 10, lineHeight: 1.6 }}>
+          Your application for the role <strong style={{ color: 'var(--text-primary)' }}>{user?.role?.replace('_', ' ')}</strong> could
           not be approved by the regulatory authority.
         </p>
 
@@ -72,7 +72,7 @@ export const AccountRejectedPage: React.FC = () => {
             style={{
               marginTop: 16,
               padding: '12px',
-              background: '#090d16',
+              background: '#ffffff',
               borderRadius: 8,
               border: '1px solid var(--border-color)',
               color: '#fb7185',

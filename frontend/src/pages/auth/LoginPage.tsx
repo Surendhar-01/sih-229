@@ -184,7 +184,7 @@ export const LoginPage: React.FC = () => {
       )}
 
       {/* Quick Role Fast-Logins (Development & Grading Accelerator) */}
-      <div style={{ marginBottom: 20, padding: '14px', background: '#090d16', borderRadius: 10, border: '1px solid var(--border-color)' }}>
+      <div style={{ marginBottom: 20, padding: '14px', background: '#ffffff', borderRadius: 10, border: '1px solid var(--border-color)' }}>
         <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, textTransform: 'uppercase' }}>
           <Zap size={14} /> One-Click Role Testing & Status Demonstrations
         </div>
@@ -219,13 +219,13 @@ export const LoginPage: React.FC = () => {
       {/* Standard Form Login */}
       <form onSubmit={handleLogin}>
         <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#334155' }}>
             Target Platform Role
           </label>
           <select
             value={selectedRole}
             onChange={(e) => setSelectedRole(e.target.value as UserRole)}
-            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#1e293b', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#f1f5f9', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
           >
             <option value="USER">Citizen / Household Consumer</option>
             <option value="INFORMAL_AGGREGATOR">Informal Aggregator (Scrap Yard Hub)</option>
@@ -245,8 +245,8 @@ export const LoginPage: React.FC = () => {
               padding: '8px',
               borderRadius: 6,
               border: 'none',
-              background: loginMethod === 'phone' ? '#10b981' : '#1e293b',
-              color: '#fff',
+              background: loginMethod === 'phone' ? '#10b981' : '#f1f5f9',
+              color: 'var(--text-primary)',
               fontSize: '0.8rem',
               fontWeight: 600,
               cursor: 'pointer',
@@ -266,8 +266,8 @@ export const LoginPage: React.FC = () => {
               padding: '8px',
               borderRadius: 6,
               border: 'none',
-              background: loginMethod === 'email' ? '#10b981' : '#1e293b',
-              color: '#fff',
+              background: loginMethod === 'email' ? '#10b981' : '#f1f5f9',
+              color: 'var(--text-primary)',
               fontSize: '0.8rem',
               fontWeight: 600,
               cursor: 'pointer',
@@ -282,7 +282,7 @@ export const LoginPage: React.FC = () => {
         </div>
 
         <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#334155' }}>
             {loginMethod === 'phone' ? 'Mobile Number' : 'Email Address'}
           </label>
           <input
@@ -290,12 +290,12 @@ export const LoginPage: React.FC = () => {
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             required
-            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#ffffff', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
           />
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#334155' }}>
             {loginMethod === 'phone' ? '6-Digit OTP Code' : 'Password'}
           </label>
           <input
@@ -303,7 +303,7 @@ export const LoginPage: React.FC = () => {
             value={otpOrPass}
             onChange={(e) => setOtpOrPass(e.target.value)}
             required
-            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#ffffff', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
           />
         </div>
 

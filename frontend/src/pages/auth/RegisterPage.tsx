@@ -154,15 +154,15 @@ export const RegisterPage: React.FC = () => {
       <form onSubmit={handleRegister}>
         {/* Role Selector Cards */}
         <div style={{ marginBottom: 18 }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 8, color: '#cbd5e1' }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 8, color: '#334155' }}>
             Select Stakeholder Category
           </label>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
             {[
               { role: 'USER' as UserRole, label: 'Citizen / Household', icon: <UserCheck size={16} />, activeColor: '#10b981' },
-              { role: 'COLLECTION_COLLECTOR' as UserRole, label: 'Collection Collector', icon: <Truck size={16} />, activeColor: '#38bdf8' },
+              { role: 'COLLECTION_COLLECTOR' as UserRole, label: 'Collection Collector', icon: <Truck size={16} />, activeColor: '#0369a1' },
               { role: 'INFORMAL_AGGREGATOR' as UserRole, label: 'Informal Aggregator', icon: <Building2 size={16} />, activeColor: '#f59e0b' },
-              { role: 'AUTHORIZED_RECYCLER' as UserRole, label: 'Authorized Recycler', icon: <Factory size={16} />, activeColor: '#c084fc' },
+              { role: 'AUTHORIZED_RECYCLER' as UserRole, label: 'Authorized Recycler', icon: <Factory size={16} />, activeColor: '#7e22ce' },
             ].map((item) => (
               <button
                 key={item.role}
@@ -172,8 +172,8 @@ export const RegisterPage: React.FC = () => {
                   padding: '10px 12px',
                   borderRadius: 8,
                   border: selectedRole === item.role ? `2px solid ${item.activeColor}` : '1px solid var(--border-color)',
-                  background: selectedRole === item.role ? 'rgba(30, 41, 59, 0.9)' : '#090d16',
-                  color: selectedRole === item.role ? '#fff' : '#94a3b8',
+                  background: selectedRole === item.role ? 'rgba(255, 255, 255, 0.92)' : '#ffffff',
+                  color: selectedRole === item.role ? 'var(--text-primary)' : '#475569',
                   fontSize: '0.8rem',
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -198,7 +198,7 @@ export const RegisterPage: React.FC = () => {
               background: selectedRole === 'USER' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
               border: `1px solid ${selectedRole === 'USER' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
               fontSize: '0.75rem',
-              color: selectedRole === 'USER' ? '#34d399' : '#f59e0b',
+              color: selectedRole === 'USER' ? '#047857' : '#f59e0b',
             }}
           >
             {selectedRole === 'USER'
@@ -209,7 +209,7 @@ export const RegisterPage: React.FC = () => {
 
         {/* Full Name / Legal Name */}
         <div style={{ marginBottom: 14 }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#334155' }}>
             Full Name / Enterprise Name
           </label>
           <input
@@ -218,14 +218,14 @@ export const RegisterPage: React.FC = () => {
             onChange={(e) => setFullName(e.target.value)}
             required
             placeholder="e.g. Anita Sharma or Dharavi Scrap Hub"
-            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#ffffff', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
           />
         </div>
 
         {/* Phone & Email Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 14 }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#334155' }}>
               Mobile Phone
             </label>
             <input
@@ -234,12 +234,12 @@ export const RegisterPage: React.FC = () => {
               onChange={(e) => setPhone(e.target.value)}
               required
               placeholder="+91 9876543210"
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#ffffff', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#334155' }}>
               Email Address
             </label>
             <input
@@ -248,14 +248,14 @@ export const RegisterPage: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="user@example.com"
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#ffffff', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
             />
           </div>
         </div>
 
         {/* Password */}
         <div style={{ marginBottom: 14 }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#334155' }}>
             Account Password
           </label>
           <input
@@ -264,20 +264,20 @@ export const RegisterPage: React.FC = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
             placeholder="••••••••••••"
-            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#ffffff', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
           />
         </div>
 
         {/* Preferred Language & Operating Location */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 14 }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#334155' }}>
               Preferred Language
             </label>
             <select
               value={preferredLang}
               onChange={(e) => setPreferredLang(e.target.value)}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#ffffff', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
             >
               <option value="en">English</option>
               <option value="hi">हिन्दी (Hindi)</option>
@@ -286,7 +286,7 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#334155' }}>
               General Operating Area
             </label>
             <input
@@ -295,7 +295,7 @@ export const RegisterPage: React.FC = () => {
               onChange={(e) => setGeneralLocation(e.target.value)}
               required
               placeholder="e.g. Andheri West, Mumbai"
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#ffffff', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
             />
           </div>
         </div>
@@ -303,13 +303,13 @@ export const RegisterPage: React.FC = () => {
         {/* Dynamic Fields for Professional Roles */}
         {selectedRole === 'COLLECTION_COLLECTOR' && (
           <div style={{ marginBottom: 14 }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#38bdf8' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#0369a1' }}>
               Collection Transport Type
             </label>
             <select
               value={vehicleType}
               onChange={(e) => setVehicleType(e.target.value)}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#ffffff', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
             >
               <option value="ELECTRIC_3WHEELER">Electric 3-Wheeler / E-Rickshaw Cargo</option>
               <option value="BICYCLE">Bicycle with Carrier Basket</option>
@@ -321,7 +321,7 @@ export const RegisterPage: React.FC = () => {
 
         {selectedRole === 'AUTHORIZED_RECYCLER' && (
           <div style={{ marginBottom: 14 }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#c084fc' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#7e22ce' }}>
               CPCB / SPCB Authorization License Number
             </label>
             <input
@@ -330,7 +330,7 @@ export const RegisterPage: React.FC = () => {
               onChange={(e) => setCpcbNumber(e.target.value)}
               required
               placeholder="e.g. CPCB-EPR-REG-MH-2026/0014"
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#ffffff', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
             />
           </div>
         )}

@@ -6,9 +6,9 @@ export const AuthLayout: React.FC = () => {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ marginBottom: 24, textAlign: 'center' }}>
-        <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: '#fff' }}>
+        <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--text-primary)' }}>
           <div style={{ width: 44, height: 44, borderRadius: 10, background: 'linear-gradient(135deg, #10b981, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Recycle size={26} color="#fff" />
+            <Recycle size={26} color="var(--text-primary)" />
           </div>
           <div style={{ textAlign: 'left' }}>
             <h1 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em' }}>India E-Waste DPI</h1>

@@ -110,19 +110,19 @@ export const AggregatorDashboard: React.FC = () => {
 
         <div className="glass-panel" style={{ padding: '20px' }}>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 8 }}>Active Field Runners</div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#38bdf8' }}>3 Collectors</div>
-          <div style={{ fontSize: '0.8rem', color: '#38bdf8', marginTop: 4 }}>All reporting GPS active</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0369a1' }}>3 Collectors</div>
+          <div style={{ fontSize: '0.8rem', color: '#0369a1', marginTop: 4 }}>All reporting GPS active</div>
         </div>
 
         <div className="glass-panel" style={{ padding: '20px' }}>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 8 }}>Consolidated Yard Stock</div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#34d399' }}>1,840 kg</div>
-          <div style={{ fontSize: '0.8rem', color: '#34d399', marginTop: 4 }}>Ready for bulk recycler auction</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#047857' }}>1,840 kg</div>
+          <div style={{ fontSize: '0.8rem', color: '#047857', marginTop: 4 }}>Ready for bulk recycler auction</div>
         </div>
 
         <div className="glass-panel" style={{ padding: '20px' }}>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 8 }}>Projected Net Profit</div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#34d399' }}>₹ 24,800</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#047857' }}>₹ 24,800</div>
           <div style={{ fontSize: '0.8rem', color: '#10b981', marginTop: 4 }}>+23% margin vs informal smelters</div>
         </div>
       </div>
@@ -138,7 +138,7 @@ export const AggregatorDashboard: React.FC = () => {
                 key={lot.id}
                 onClick={() => setSelectedLot(lot)}
                 style={{
-                  background: selectedLot?.id === lot.id ? '#1e293b' : '#090d16',
+                  background: selectedLot?.id === lot.id ? '#f1f5f9' : '#ffffff',
                   borderRadius: 8,
                   padding: 14,
                   cursor: 'pointer',
@@ -147,13 +147,13 @@ export const AggregatorDashboard: React.FC = () => {
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#fff' }}>{lot.lot_code}</div>
+                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{lot.lot_code}</div>
                   <span className="badge badge-amber">{lot.status.replace('_', ' ')}</span>
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#cbd5e1', marginBottom: 6 }}>{lot.description}</div>
+                <div style={{ fontSize: '0.85rem', color: '#334155', marginBottom: 6 }}>{lot.description}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                   <span>{lot.pickup_address}</span>
-                  <span style={{ fontWeight: 700, color: '#34d399' }}>₹ {lot.agreed_purchase_price || lot.ai_estimated_min_value}</span>
+                  <span style={{ fontWeight: 700, color: '#047857' }}>₹ {lot.agreed_purchase_price || lot.ai_estimated_min_value}</span>
                 </div>
               </div>
             ))}
@@ -171,35 +171,35 @@ export const AggregatorDashboard: React.FC = () => {
               <span className="badge badge-emerald">{economics.profitMargin}% Net Margin</span>
             </div>
 
-            <div style={{ background: '#090d16', padding: 16, borderRadius: 10, border: '1px solid var(--border-color)', marginBottom: 16 }}>
-              <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 10, color: '#fff' }}>
+            <div style={{ background: '#ffffff', padding: 16, borderRadius: 10, border: '1px solid var(--border-color)', marginBottom: 16 }}>
+              <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 10, color: 'var(--text-primary)' }}>
                 Financial Analysis for {selectedLot.lot_code}
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.85rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
                   <span>Expected Recycler Sale Value (CPCB Recycler)</span>
-                  <span style={{ fontWeight: 700, color: '#34d399' }}>+ ₹ {economics.expectedRecyclerSale.toFixed(2)}</span>
+                  <span style={{ fontWeight: 700, color: '#047857' }}>+ ₹ {economics.expectedRecyclerSale.toFixed(2)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
                   <span>Citizen Purchase Cost</span>
                   <span style={{ fontWeight: 700, color: '#fb7185' }}>- ₹ {economics.citizenPayout.toFixed(2)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
                   <span>Field Agent Transport & Fuel</span>
                   <span style={{ fontWeight: 700, color: '#fb7185' }}>- ₹ {economics.transportCost.toFixed(2)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
                   <span>Godown Sorting & Packaging</span>
                   <span style={{ fontWeight: 700, color: '#fb7185' }}>- ₹ {economics.handlingCost.toFixed(2)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
                   <span>DPI Platform Clearing Fee (2%)</span>
                   <span style={{ fontWeight: 700, color: '#fb7185' }}>- ₹ {economics.platformFee.toFixed(2)}</span>
                 </div>
                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '1.05rem' }}>
                   <span>Net Aggregator Margin</span>
-                  <span style={{ color: '#34d399' }}>₹ {economics.netProfit.toFixed(2)}</span>
+                  <span style={{ color: '#047857' }}>₹ {economics.netProfit.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -212,7 +212,7 @@ export const AggregatorDashboard: React.FC = () => {
               </h3>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ background: '#090d16', padding: 12, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ background: '#ffffff', padding: 12, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>Ramesh Babu (Auto-Rickshaw)</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Distance: 2.4 km • Completion: 98.5% • Rating: 4.9 ★</div>
@@ -229,7 +229,7 @@ export const AggregatorDashboard: React.FC = () => {
                   </button>
                 </div>
 
-                <div style={{ background: '#090d16', padding: 12, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ background: '#ffffff', padding: 12, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>Suresh Scrap Runner (Mini-Truck)</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Distance: 4.8 km • Completion: 92.0% • Rating: 4.7 ★</div>

@@ -226,7 +226,7 @@ export const AdminDashboard: React.FC = () => {
             borderRadius: 8,
             background: 'rgba(16, 185, 129, 0.2)',
             border: '1px solid rgba(16, 185, 129, 0.4)',
-            color: '#34d399',
+            color: '#047857',
             display: 'flex',
             alignItems: 'center',
             gap: 10,
@@ -290,7 +290,7 @@ export const AdminDashboard: React.FC = () => {
           style={{
             padding: '8px 16px',
             fontSize: '0.85rem',
-            background: activeTab === 'anomalies' ? 'linear-gradient(135deg, #f43f5e, #e11d48)' : '#1e293b',
+            background: activeTab === 'anomalies' ? 'linear-gradient(135deg, #f43f5e, #e11d48)' : '#f1f5f9',
           }}
         >
           AI Anomaly Desk ({anomalies.filter((a) => !a.is_resolved).length})
@@ -320,10 +320,10 @@ export const AdminDashboard: React.FC = () => {
           </div>
 
           {pendingAccounts.length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center', background: '#090d16', borderRadius: 10, border: '1px solid var(--border-color)' }}>
+            <div style={{ padding: '40px', textAlign: 'center', background: '#ffffff', borderRadius: 10, border: '1px solid var(--border-color)' }}>
               <CheckCircle size={40} color="#10b981" style={{ margin: '0 auto 12px' }} />
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>All Applications Processed</div>
-              <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: 4 }}>No pending stakeholder approvals currently in queue.</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>All Applications Processed</div>
+              <div style={{ fontSize: '0.85rem', color: '#475569', marginTop: 4 }}>No pending stakeholder approvals currently in queue.</div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -331,7 +331,7 @@ export const AdminDashboard: React.FC = () => {
                 <div
                   key={account.id}
                   style={{
-                    background: '#090d16',
+                    background: '#ffffff',
                     borderRadius: 10,
                     padding: '20px',
                     border: '1px solid var(--border-color)',
@@ -354,20 +354,20 @@ export const AdminDashboard: React.FC = () => {
                         <span className="badge badge-amber">STATUS: PENDING</span>
                         <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Submitted: {account.created_at || 'Today'}</span>
                       </div>
-                      <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff' }}>{account.full_name}</h3>
-                      <div style={{ fontSize: '0.85rem', color: '#cbd5e1', marginTop: 4 }}>
-                        Phone: <strong style={{ color: '#fff' }}>{account.phone}</strong> • Email: <strong style={{ color: '#fff' }}>{account.email}</strong>
+                      <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>{account.full_name}</h3>
+                      <div style={{ fontSize: '0.85rem', color: '#334155', marginTop: 4 }}>
+                        Phone: <strong style={{ color: 'var(--text-primary)' }}>{account.phone}</strong> • Email: <strong style={{ color: 'var(--text-primary)' }}>{account.email}</strong>
                       </div>
-                      <div style={{ fontSize: '0.85rem', color: '#cbd5e1', marginTop: 2 }}>
-                        Operating Zone: <strong style={{ color: '#38bdf8' }}>{account.general_location || 'Mumbai Corridor'}</strong>
+                      <div style={{ fontSize: '0.85rem', color: '#334155', marginTop: 2 }}>
+                        Operating Zone: <strong style={{ color: '#0369a1' }}>{account.general_location || 'Mumbai Corridor'}</strong>
                       </div>
                       {account.vehicle_type && (
-                        <div style={{ fontSize: '0.8rem', color: '#34d399', marginTop: 4 }}>
+                        <div style={{ fontSize: '0.8rem', color: '#047857', marginTop: 4 }}>
                           Vehicle Type: <strong>{account.vehicle_type}</strong>
                         </div>
                       )}
                       {account.cpcb_authorization_number && (
-                        <div style={{ fontSize: '0.8rem', color: '#c084fc', marginTop: 4 }}>
+                        <div style={{ fontSize: '0.8rem', color: '#7e22ce', marginTop: 4 }}>
                           License Submitted: <strong>{account.cpcb_authorization_number}</strong>
                         </div>
                       )}
@@ -419,7 +419,7 @@ export const AdminDashboard: React.FC = () => {
           {/* Audit Trail Snippet */}
           <div style={{ marginTop: 32, borderTop: '1px solid var(--border-color)', paddingTop: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-              <History size={18} color="#38bdf8" />
+              <History size={18} color="#0369a1" />
               <h3 style={{ fontSize: '1rem', fontWeight: 800 }}>Immutable Regulatory Audit Log</h3>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -430,7 +430,7 @@ export const AdminDashboard: React.FC = () => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    background: '#090d16',
+                    background: '#ffffff',
                     padding: '8px 14px',
                     borderRadius: 6,
                     fontSize: '0.8rem',
@@ -439,7 +439,7 @@ export const AdminDashboard: React.FC = () => {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span className="badge badge-emerald" style={{ fontSize: '0.7rem' }}>{log.action}</span>
-                    <span style={{ color: '#fff', fontWeight: 600 }}>{log.target}</span>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{log.target}</span>
                   </div>
                   <div style={{ color: '#64748b' }}>{log.time}</div>
                 </div>
@@ -472,7 +472,7 @@ export const AdminDashboard: React.FC = () => {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-color)', color: '#94a3b8', textAlign: 'left' }}>
+                <tr style={{ borderBottom: '1px solid var(--border-color)', color: '#475569', textAlign: 'left' }}>
                   <th style={{ padding: '10px 12px' }}>Entity Name</th>
                   <th style={{ padding: '10px 12px' }}>Role</th>
                   <th style={{ padding: '10px 12px' }}>Account Status</th>
@@ -484,17 +484,17 @@ export const AdminDashboard: React.FC = () => {
               <tbody>
                 {allUsers.map((u) => (
                   <tr key={u.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                    <td style={{ padding: '12px', fontWeight: 700, color: '#fff' }}>{u.full_name}</td>
+                    <td style={{ padding: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{u.full_name}</td>
                     <td style={{ padding: '12px' }}>
                       <span className="badge badge-secondary">{u.role}</span>
                     </td>
                     <td style={{ padding: '12px' }}>
                       {u.account_status === 'ACTIVE' && <span className="badge badge-emerald">ACTIVE</span>}
                       {u.account_status === 'PENDING' && <span className="badge badge-amber">PENDING</span>}
-                      {u.account_status === 'SUSPENDED' && <span className="badge" style={{ background: '#f43f5e', color: '#fff' }}>SUSPENDED</span>}
-                      {u.account_status === 'REJECTED' && <span className="badge" style={{ background: '#e11d48', color: '#fff' }}>REJECTED</span>}
+                      {u.account_status === 'SUSPENDED' && <span className="badge" style={{ background: '#f43f5e', color: 'var(--text-primary)' }}>SUSPENDED</span>}
+                      {u.account_status === 'REJECTED' && <span className="badge" style={{ background: '#e11d48', color: 'var(--text-primary)' }}>REJECTED</span>}
                     </td>
-                    <td style={{ padding: '12px', color: '#cbd5e1' }}>{u.phone}</td>
+                    <td style={{ padding: '12px', color: '#334155' }}>{u.phone}</td>
                     <td style={{ padding: '12px' }}>{u.is_verified ? '✓ Yes' : '✗ No'}</td>
                     <td style={{ padding: '12px', textAlign: 'right' }}>
                       {u.role !== 'GOVERNMENT_ADMIN' && (
@@ -522,7 +522,7 @@ export const AdminDashboard: React.FC = () => {
                               style={{
                                 background: 'transparent',
                                 border: '1px solid #10b981',
-                                color: '#34d399',
+                                color: '#047857',
                                 padding: '4px 8px',
                                 borderRadius: 4,
                                 fontSize: '0.75rem',
@@ -549,20 +549,20 @@ export const AdminDashboard: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '24px' }}>
             <div className="glass-panel" style={{ padding: '20px' }}>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 8 }}>Total E-Waste Formalized</div>
-              <div style={{ fontSize: '2.2rem', fontWeight: 800, color: '#34d399' }}>1,420.8 MT</div>
+              <div style={{ fontSize: '2.2rem', fontWeight: 800, color: '#047857' }}>1,420.8 MT</div>
               <div style={{ fontSize: '0.8rem', color: '#10b981', marginTop: 4 }}>Formalization Rate: 74.2% (+18% YoY)</div>
             </div>
 
             <div className="glass-panel" style={{ padding: '20px' }}>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 8 }}>Registered Scrap Aggregators</div>
-              <div style={{ fontSize: '2.2rem', fontWeight: 800, color: '#38bdf8' }}>184 Yards</div>
-              <div style={{ fontSize: '0.8rem', color: '#38bdf8', marginTop: 4 }}>1,250 Active Field Collectors</div>
+              <div style={{ fontSize: '2.2rem', fontWeight: 800, color: '#0369a1' }}>184 Yards</div>
+              <div style={{ fontSize: '0.8rem', color: '#0369a1', marginTop: 4 }}>1,250 Active Field Collectors</div>
             </div>
 
             <div className="glass-panel" style={{ padding: '20px' }}>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 8 }}>Authorized Recyclers</div>
-              <div style={{ fontSize: '2.2rem', fontWeight: 800, color: '#c084fc' }}>42 Facilities</div>
-              <div style={{ fontSize: '0.8rem', color: '#c084fc', marginTop: 4 }}>100% CPCB Environmental Compliance</div>
+              <div style={{ fontSize: '2.2rem', fontWeight: 800, color: '#7e22ce' }}>42 Facilities</div>
+              <div style={{ fontSize: '0.8rem', color: '#7e22ce', marginTop: 4 }}>100% CPCB Environmental Compliance</div>
             </div>
 
             <div className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(244, 63, 94, 0.4)' }}>
@@ -589,7 +589,7 @@ export const AdminDashboard: React.FC = () => {
                 value={searchLotCode}
                 onChange={(e) => setSearchLotCode(e.target.value)}
                 placeholder="Enter Lot ID (e.g. EW-2026-000101)"
-                style={{ width: '100%', padding: '12px 16px', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none', fontSize: '1rem', fontWeight: 700 }}
+                style={{ width: '100%', padding: '12px 16px', borderRadius: 8, background: '#ffffff', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none', fontSize: '1rem', fontWeight: 700 }}
               />
             </div>
             <button
@@ -602,10 +602,10 @@ export const AdminDashboard: React.FC = () => {
             </button>
           </div>
 
-          <div style={{ background: '#090d16', borderRadius: 10, padding: 20, border: '1px solid var(--border-color)' }}>
+          <div style={{ background: '#ffffff', borderRadius: 10, padding: 20, border: '1px solid var(--border-color)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
               <div>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff' }}>Lot Audit: {searchedLot.lot_code}</h3>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>Lot Audit: {searchedLot.lot_code}</h3>
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Material: {searchedLot.category}</div>
               </div>
               <span className="badge badge-amber">ACTIVE IN FIELD</span>
@@ -622,7 +622,7 @@ export const AdminDashboard: React.FC = () => {
                     justifyContent: 'space-between',
                     padding: '12px 16px',
                     borderRadius: 8,
-                    background: stage.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.08)' : '#1e293b',
+                    background: stage.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.08)' : '#f1f5f9',
                     borderLeft: `4px solid ${stage.status === 'COMPLETED' ? '#10b981' : '#f59e0b'}`,
                   }}
                 >
@@ -633,7 +633,7 @@ export const AdminDashboard: React.FC = () => {
                       <Radio size={18} className="text-amber-400" />
                     )}
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>{stage.name}</div>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{stage.name}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Actor: {stage.actor}</div>
                     </div>
                   </div>
@@ -662,31 +662,31 @@ export const AdminDashboard: React.FC = () => {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-            <div style={{ background: '#090d16', padding: 16, borderRadius: 8, border: '1px solid var(--border-color)' }}>
+            <div style={{ background: '#ffffff', padding: 16, borderRadius: 8, border: '1px solid var(--border-color)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <Truck size={18} className="text-cyan-400" />
                 <span style={{ fontWeight: 700 }}>Collector #04 (Ramesh Babu)</span>
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>Location: Andheri West (19.1363° N, 72.8277° E)</div>
-              <div style={{ fontSize: '0.75rem', color: '#38bdf8', marginTop: 4 }}>En-route to pick up Lot EW-2026-000101</div>
+              <div style={{ fontSize: '0.8rem', color: '#334155' }}>Location: Andheri West (19.1363° N, 72.8277° E)</div>
+              <div style={{ fontSize: '0.75rem', color: '#0369a1', marginTop: 4 }}>En-route to pick up Lot EW-2026-000101</div>
             </div>
 
-            <div style={{ background: '#090d16', padding: 16, borderRadius: 8, border: '1px solid var(--border-color)' }}>
+            <div style={{ background: '#ffffff', padding: 16, borderRadius: 8, border: '1px solid var(--border-color)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <Building2 size={18} className="text-amber-400" />
                 <span style={{ fontWeight: 700 }}>Dharavi Scrap Consolidation Hub</span>
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>Location: Dharavi Yard 12 (19.0434° N, 72.8567° E)</div>
+              <div style={{ fontSize: '0.8rem', color: '#334155' }}>Location: Dharavi Yard 12 (19.0434° N, 72.8567° E)</div>
               <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: 4 }}>1,840 kg stock ready for formal dispatch</div>
             </div>
 
-            <div style={{ background: '#090d16', padding: 16, borderRadius: 8, border: '1px solid var(--border-color)' }}>
+            <div style={{ background: '#ffffff', padding: 16, borderRadius: 8, border: '1px solid var(--border-color)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <Factory size={18} className="text-purple-400" />
                 <span style={{ fontWeight: 700 }}>EcoClean Recyclers Ltd (Formal)</span>
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>Location: Taloja MIDC (19.0833° N, 73.1167° E)</div>
-              <div style={{ fontSize: '0.75rem', color: '#c084fc', marginTop: 4 }}>CPCB Licensed Facility (5,000 MT Annual)</div>
+              <div style={{ fontSize: '0.8rem', color: '#334155' }}>Location: Taloja MIDC (19.0833° N, 73.1167° E)</div>
+              <div style={{ fontSize: '0.75rem', color: '#7e22ce', marginTop: 4 }}>CPCB Licensed Facility (5,000 MT Annual)</div>
             </div>
           </div>
         </div>
@@ -701,7 +701,7 @@ export const AdminDashboard: React.FC = () => {
               <div
                 key={a.id}
                 style={{
-                  background: '#090d16',
+                  background: '#ffffff',
                   borderRadius: 10,
                   padding: 18,
                   border: a.is_resolved ? '1px solid #10b981' : '1px solid rgba(244, 63, 94, 0.4)',
@@ -712,7 +712,7 @@ export const AdminDashboard: React.FC = () => {
                     <span className="badge" style={{ background: 'rgba(244, 63, 94, 0.15)', color: '#fb7185' }}>
                       {a.risk_level} RISK
                     </span>
-                    <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#fff' }}>{a.lot_code}</span>
+                    <span style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>{a.lot_code}</span>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Type: {a.detector_type}</span>
                   </div>
                   {a.is_resolved ? (
@@ -729,10 +729,10 @@ export const AdminDashboard: React.FC = () => {
                   )}
                 </div>
 
-                <p style={{ fontSize: '0.85rem', color: '#cbd5e1', marginBottom: 12 }}>{a.reason}</p>
+                <p style={{ fontSize: '0.85rem', color: '#334155', marginBottom: 12 }}>{a.reason}</p>
 
                 <div style={{ display: 'flex', gap: 20, fontSize: '0.8rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
-                  <span>Expected Benchmark: <strong style={{ color: '#fff' }}>{a.expected_range}</strong></span>
+                  <span>Expected Benchmark: <strong style={{ color: 'var(--text-primary)' }}>{a.expected_range}</strong></span>
                   <span>Reported Value: <strong style={{ color: '#fb7185' }}>{a.actual_price}</strong></span>
                   <span>Deviation: <strong style={{ color: '#fb7185' }}>{a.deviation}</strong></span>
                 </div>

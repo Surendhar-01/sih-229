@@ -93,7 +93,7 @@ export const CollectorDashboard: React.FC = () => {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(16, 185, 129, 0.15)', padding: '8px 14px', borderRadius: 8, border: '1px solid rgba(16, 185, 129, 0.3)' }}>
             <Wifi size={16} className="text-emerald-400" />
-            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#34d399' }}>Offline PWA Sync: Ready</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#047857' }}>Offline PWA Sync: Ready</span>
           </div>
         </div>
       </div>
@@ -112,7 +112,7 @@ export const CollectorDashboard: React.FC = () => {
                   setVerificationSuccess(false);
                 }}
                 style={{
-                  background: activeLot?.id === job.id ? '#1e293b' : '#090d16',
+                  background: activeLot?.id === job.id ? '#f1f5f9' : '#ffffff',
                   borderRadius: 10,
                   padding: 16,
                   border: activeLot?.id === job.id ? '1px solid #06b6d4' : '1px solid var(--border-color)',
@@ -121,17 +121,17 @@ export const CollectorDashboard: React.FC = () => {
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-                  <div style={{ fontWeight: 800, fontSize: '1rem', color: '#fff' }}>{job.lot_code}</div>
+                  <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>{job.lot_code}</div>
                   <span className="badge badge-amber">{job.status.replace('_', ' ')}</span>
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#cbd5e1', marginBottom: 6 }}>{job.description}</div>
+                <div style={{ fontSize: '0.85rem', color: '#334155', marginBottom: 6 }}>{job.description}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                   <MapPin size={13} />
                   <span>{job.pickup_address}</span>
                 </div>
                 <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
-                  <span style={{ color: '#38bdf8' }}>Mass: ~{job.estimated_weight_kg} kg</span>
-                  <span style={{ fontWeight: 800, color: '#34d399' }}>Payout: ₹ {job.agreed_purchase_price || 350}</span>
+                  <span style={{ color: '#0369a1' }}>Mass: ~{job.estimated_weight_kg} kg</span>
+                  <span style={{ fontWeight: 800, color: '#047857' }}>Payout: ₹ {job.agreed_purchase_price || 350}</span>
                 </div>
               </div>
             ))}
@@ -150,7 +150,7 @@ export const CollectorDashboard: React.FC = () => {
             </div>
 
             {/* Workflow Step Tracker */}
-            <div style={{ background: '#090d16', padding: 14, borderRadius: 8, border: '1px solid var(--border-color)', marginBottom: 20 }}>
+            <div style={{ background: '#ffffff', padding: 14, borderRadius: 8, border: '1px solid var(--border-color)', marginBottom: 20 }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8, textTransform: 'uppercase' }}>
                 Field Step Progression
               </div>
@@ -159,7 +159,7 @@ export const CollectorDashboard: React.FC = () => {
                   type="button"
                   onClick={() => handleStatusTransition(activeLot.id, 'ON_THE_WAY')}
                   className="btn-secondary"
-                  style={{ fontSize: '0.75rem', padding: '6px 10px', background: activeLot.status === 'ON_THE_WAY' ? '#0284c7' : '#1e293b' }}
+                  style={{ fontSize: '0.75rem', padding: '6px 10px', background: activeLot.status === 'ON_THE_WAY' ? '#0284c7' : '#f1f5f9' }}
                 >
                   1. On The Way
                 </button>
@@ -167,7 +167,7 @@ export const CollectorDashboard: React.FC = () => {
                   type="button"
                   onClick={() => handleStatusTransition(activeLot.id, 'ARRIVED')}
                   className="btn-secondary"
-                  style={{ fontSize: '0.75rem', padding: '6px 10px', background: activeLot.status === 'ARRIVED' ? '#0284c7' : '#1e293b' }}
+                  style={{ fontSize: '0.75rem', padding: '6px 10px', background: activeLot.status === 'ARRIVED' ? '#0284c7' : '#f1f5f9' }}
                 >
                   2. Arrived at Doorstep
                 </button>
@@ -180,7 +180,7 @@ export const CollectorDashboard: React.FC = () => {
             {/* Verification & Weighing Form */}
             <form onSubmit={handleVerifyPickup}>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#334155' }}>
                   <Scale size={16} className="text-emerald-400" />
                   <span>Calibrated Scale Reading (kg)</span>
                 </label>
@@ -190,7 +190,7 @@ export const CollectorDashboard: React.FC = () => {
                   value={verifiedWeight}
                   onChange={(e) => setVerifiedWeight(e.target.value)}
                   required
-                  style={{ width: '100%', padding: '12px', fontSize: '1.2rem', fontWeight: 800, borderRadius: 8, background: '#090d16', color: '#34d399', border: '1px solid var(--border-color)', outline: 'none' }}
+                  style={{ width: '100%', padding: '12px', fontSize: '1.2rem', fontWeight: 800, borderRadius: 8, background: '#ffffff', color: '#047857', border: '1px solid var(--border-color)', outline: 'none' }}
                 />
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4 }}>
                   Estimated weight was {activeLot.estimated_weight_kg} kg (Variance: 1.6% - Within acceptable bounds)
@@ -198,7 +198,7 @@ export const CollectorDashboard: React.FC = () => {
               </div>
 
               <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#cbd5e1' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#334155' }}>
                   <KeyRound size={16} className="text-amber-400" />
                   <span>Enter Citizen 4-Digit Doorstep OTP</span>
                 </label>
@@ -209,9 +209,9 @@ export const CollectorDashboard: React.FC = () => {
                   onChange={(e) => setEnteredOtp(e.target.value)}
                   placeholder={`Citizen OTP is: ${activeLot.pickup_otp || '4821'}`}
                   required
-                  style={{ width: '100%', padding: '12px', fontSize: '1.3rem', fontWeight: 800, letterSpacing: '0.2em', textAlign: 'center', borderRadius: 8, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)', outline: 'none' }}
+                  style={{ width: '100%', padding: '12px', fontSize: '1.3rem', fontWeight: 800, letterSpacing: '0.2em', textAlign: 'center', borderRadius: 8, background: '#ffffff', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
                 />
-                <div style={{ fontSize: '0.75rem', color: '#fbbf24', marginTop: 4 }}>
+                <div style={{ fontSize: '0.75rem', color: '#b45309', marginTop: 4 }}>
                   Citizen receives this 4-digit code in their dashboard to confirm fair physical handover.
                 </div>
               </div>
@@ -230,11 +230,11 @@ export const CollectorDashboard: React.FC = () => {
             {/* Receipt Modal on Success */}
             {verificationSuccess && (
               <div style={{ marginTop: 18, background: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10b981', padding: 14, borderRadius: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#34d399', fontWeight: 800, marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#047857', fontWeight: 800, marginBottom: 4 }}>
                   <Receipt size={18} />
                   <span>Digital Handover Receipt Generated!</span>
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>
+                <div style={{ fontSize: '0.8rem', color: '#334155' }}>
                   Transaction Code: RCP-{Date.now().toString().slice(-6)} • Verified Mass: {verifiedWeight} kg • Payout: ₹ {activeLot.agreed_purchase_price || 350} settled via Cash Voucher.
                 </div>
               </div>

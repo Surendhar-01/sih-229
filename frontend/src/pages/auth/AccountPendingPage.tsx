@@ -83,7 +83,7 @@ export const AccountPendingPage: React.FC = () => {
     <div
       style={{
         minHeight: '100vh',
-        background: '#0a0e17',
+        background: '#f1f5f9',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -135,10 +135,10 @@ export const AccountPendingPage: React.FC = () => {
             </span>
           </div>
 
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginTop: 12 }}>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: 12 }}>
             {workflow.title}
           </h1>
-          <p style={{ fontSize: '0.9rem', color: '#94a3b8', marginTop: 8, lineHeight: 1.6 }}>
+          <p style={{ fontSize: '0.9rem', color: '#475569', marginTop: 8, lineHeight: 1.6 }}>
             {workflow.description}
           </p>
         </div>
@@ -146,7 +146,7 @@ export const AccountPendingPage: React.FC = () => {
         {/* Account Details Box */}
         <div
           style={{
-            background: '#090d16',
+            background: '#ffffff',
             borderRadius: 10,
             padding: '16px 20px',
             marginBottom: 24,
@@ -156,26 +156,26 @@ export const AccountPendingPage: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, fontSize: '0.85rem' }}>
             <div>
               <span style={{ color: '#64748b' }}>Applicant Name:</span>
-              <div style={{ color: '#fff', fontWeight: 600 }}>{user?.full_name || 'N/A'}</div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{user?.full_name || 'N/A'}</div>
             </div>
             <div>
               <span style={{ color: '#64748b' }}>Requested Role:</span>
-              <div style={{ color: '#38bdf8', fontWeight: 700 }}>{user?.role?.replace('_', ' ') || 'N/A'}</div>
+              <div style={{ color: '#0369a1', fontWeight: 700 }}>{user?.role?.replace('_', ' ') || 'N/A'}</div>
             </div>
             <div>
               <span style={{ color: '#64748b' }}>Contact Details:</span>
-              <div style={{ color: '#cbd5e1' }}>{user?.phone || user?.email || 'N/A'}</div>
+              <div style={{ color: '#334155' }}>{user?.phone || user?.email || 'N/A'}</div>
             </div>
             <div>
               <span style={{ color: '#64748b' }}>Operating Area:</span>
-              <div style={{ color: '#cbd5e1' }}>{user?.general_location || 'Not Specified'}</div>
+              <div style={{ color: '#334155' }}>{user?.general_location || 'Not Specified'}</div>
             </div>
           </div>
         </div>
 
         {/* Stepper Progression */}
         <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 12 }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: 12 }}>
             Approval Progression
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -188,8 +188,8 @@ export const AccountPendingPage: React.FC = () => {
                   gap: 12,
                   padding: '8px 12px',
                   borderRadius: 6,
-                  background: idx === 0 ? 'rgba(16, 185, 129, 0.1)' : idx === 1 ? 'rgba(245, 158, 11, 0.1)' : '#1e293b',
-                  borderLeft: `3px solid ${idx === 0 ? '#10b981' : idx === 1 ? '#f59e0b' : '#475569'}`,
+                  background: idx === 0 ? 'rgba(16, 185, 129, 0.1)' : idx === 1 ? 'rgba(245, 158, 11, 0.1)' : '#f1f5f9',
+                  borderLeft: `3px solid ${idx === 0 ? '#10b981' : idx === 1 ? '#f59e0b' : '#334155'}`,
                 }}
               >
                 {idx === 0 ? (
@@ -197,7 +197,7 @@ export const AccountPendingPage: React.FC = () => {
                 ) : (
                   <Clock size={16} color={idx === 1 ? '#f59e0b' : '#64748b'} />
                 )}
-                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: idx <= 1 ? '#fff' : '#64748b' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: idx <= 1 ? 'var(--text-primary)' : '#64748b' }}>
                   {step} {idx === 1 && '(Currently In Review)'}
                 </span>
               </div>
@@ -211,7 +211,7 @@ export const AccountPendingPage: React.FC = () => {
               padding: '10px 16px',
               borderRadius: 8,
               background: feedback.includes('approved') ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-              color: feedback.includes('approved') ? '#34d399' : '#f59e0b',
+              color: feedback.includes('approved') ? '#047857' : '#f59e0b',
               fontSize: '0.85rem',
               fontWeight: 600,
               textAlign: 'center',

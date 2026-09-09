@@ -71,9 +71,9 @@ export const ProfilePage: React.FC = () => {
       case 'PENDING':
         return <span className="badge badge-amber">PENDING APPROVAL</span>;
       case 'SUSPENDED':
-        return <span className="badge" style={{ background: '#f43f5e', color: '#fff' }}>SUSPENDED</span>;
+        return <span className="badge" style={{ background: '#f43f5e', color: 'var(--text-primary)' }}>SUSPENDED</span>;
       case 'REJECTED':
-        return <span className="badge" style={{ background: '#e11d48', color: '#fff' }}>REJECTED</span>;
+        return <span className="badge" style={{ background: '#e11d48', color: 'var(--text-primary)' }}>REJECTED</span>;
       default:
         return <span className="badge badge-secondary">{status || 'UNKNOWN'}</span>;
     }
@@ -94,7 +94,7 @@ export const ProfilePage: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#fff',
+                color: 'var(--text-primary)',
                 fontSize: '1.4rem',
                 fontWeight: 800,
               }}
@@ -114,7 +114,7 @@ export const ProfilePage: React.FC = () => {
               className="badge"
               style={{
                 background: 'rgba(56, 189, 248, 0.15)',
-                color: '#38bdf8',
+                color: '#0369a1',
                 border: '1px solid rgba(56, 189, 248, 0.3)',
                 padding: '6px 14px',
               }}
@@ -132,7 +132,7 @@ export const ProfilePage: React.FC = () => {
             {/* Read-only Security Attributes notice */}
             <div
               style={{
-                background: '#090d16',
+                background: '#ffffff',
                 border: '1px solid var(--border-color)',
                 borderRadius: 8,
                 padding: '14px 18px',
@@ -142,15 +142,15 @@ export const ProfilePage: React.FC = () => {
               }}
             >
               <Lock size={20} color="#f59e0b" />
-              <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                <strong style={{ color: '#cbd5e1' }}>Security Controlled Fields:</strong> Role assignments, account status,
+              <div style={{ fontSize: '0.8rem', color: '#475569' }}>
+                <strong style={{ color: '#334155' }}>Security Controlled Fields:</strong> Role assignments, account status,
                 and regulatory verification are strictly managed by administrative protocol and cannot be edited by the user.
               </div>
             </div>
 
             {/* Full Name */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#cbd5e1', marginBottom: 6 }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: 6 }}>
                 Full Name / Business Legal Name
               </label>
               <div style={{ position: 'relative' }}>
@@ -163,8 +163,8 @@ export const ProfilePage: React.FC = () => {
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: 8,
-                    background: '#090d16',
-                    color: '#fff',
+                    background: '#ffffff',
+                    color: 'var(--text-primary)',
                     border: '1px solid var(--border-color)',
                     outline: 'none',
                     fontSize: '0.9rem',
@@ -176,10 +176,10 @@ export const ProfilePage: React.FC = () => {
             {/* Contact Information (Read-Only Identity) */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: 6 }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: 6 }}>
                   Phone Number (Auth Verified)
                 </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#1e293b', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border-color)', color: '#94a3b8', fontSize: '0.9rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f1f5f9', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border-color)', color: '#475569', fontSize: '0.9rem' }}>
                   <Phone size={16} />
                   <span>{user?.phone || 'Not Registered'}</span>
                   <Lock size={14} style={{ marginLeft: 'auto', opacity: 0.5 }} />
@@ -187,10 +187,10 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: 6 }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: 6 }}>
                   Email Address
                 </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#1e293b', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border-color)', color: '#94a3b8', fontSize: '0.9rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f1f5f9', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border-color)', color: '#475569', fontSize: '0.9rem' }}>
                   <Mail size={16} />
                   <span>{user?.email || 'Not Registered'}</span>
                   <Lock size={14} style={{ marginLeft: 'auto', opacity: 0.5 }} />
@@ -200,7 +200,7 @@ export const ProfilePage: React.FC = () => {
 
             {/* Preferred Language */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#cbd5e1', marginBottom: 6 }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: 6 }}>
                 Preferred Platform Language (i18n)
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
@@ -217,8 +217,8 @@ export const ProfilePage: React.FC = () => {
                       padding: '12px',
                       borderRadius: 8,
                       border: preferredLang === lang.code ? '2px solid #10b981' : '1px solid var(--border-color)',
-                      background: preferredLang === lang.code ? 'rgba(16, 185, 129, 0.15)' : '#090d16',
-                      color: preferredLang === lang.code ? '#fff' : '#94a3b8',
+                      background: preferredLang === lang.code ? 'rgba(16, 185, 129, 0.15)' : '#ffffff',
+                      color: preferredLang === lang.code ? 'var(--text-primary)' : '#475569',
                       fontWeight: 600,
                       cursor: 'pointer',
                       fontSize: '0.85rem',
@@ -237,7 +237,7 @@ export const ProfilePage: React.FC = () => {
 
             {/* General Operating Location */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#cbd5e1', marginBottom: 6 }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: 6 }}>
                 General Operating Location / Hub Address
               </label>
               <div style={{ position: 'relative' }}>
@@ -250,8 +250,8 @@ export const ProfilePage: React.FC = () => {
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: 8,
-                    background: '#090d16',
-                    color: '#fff',
+                    background: '#ffffff',
+                    color: 'var(--text-primary)',
                     border: '1px solid var(--border-color)',
                     outline: 'none',
                     fontSize: '0.9rem',
@@ -262,11 +262,11 @@ export const ProfilePage: React.FC = () => {
 
             {/* Specific Role Metadata if available */}
             {user?.role === 'AUTHORIZED_RECYCLER' && (
-              <div style={{ background: '#090d16', padding: '16px', borderRadius: 8, border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#c084fc', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ background: '#ffffff', padding: '16px', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#7e22ce', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Building2 size={16} /> CPCB Recycler Authorization
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>
+                <div style={{ fontSize: '0.85rem', color: '#334155' }}>
                   License Number: <strong>{user?.cpcb_authorization_number || 'PENDING-REG-MH-2026/091'}</strong>
                 </div>
               </div>
@@ -282,7 +282,7 @@ export const ProfilePage: React.FC = () => {
                   padding: '10px 14px',
                   borderRadius: 8,
                   background: message.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
-                  color: message.type === 'success' ? '#34d399' : '#fb7185',
+                  color: message.type === 'success' ? '#047857' : '#fb7185',
                   fontSize: '0.85rem',
                 }}
               >

@@ -84,7 +84,7 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({ isOpen, onClose,
           maxHeight: '90vh',
           overflowY: 'auto',
           padding: 24,
-          background: '#0f172a',
+          background: '#ffffff',
           border: '1px solid rgba(148, 163, 184, 0.25)',
         }}
       >
@@ -92,14 +92,14 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({ isOpen, onClose,
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg, #10b981, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Camera size={20} color="#fff" />
+              <Camera size={20} color="var(--text-primary)" />
             </div>
             <div>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>AI E-Waste Vision Scanner</h2>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Instant Identification, Fair Valuation & Safety Warnings</p>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#475569', cursor: 'pointer' }}>
             <X size={20} />
           </button>
         </div>
@@ -107,7 +107,7 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({ isOpen, onClose,
         {/* Scan Actions or Sample Selector */}
         {!scanResult && !scanning && (
           <div>
-            <p style={{ fontSize: '0.85rem', color: '#cbd5e1', marginBottom: 16 }}>
+            <p style={{ fontSize: '0.85rem', color: '#334155', marginBottom: 16 }}>
               Select an electronic waste item to run the AI recognition & valuation pipeline:
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginBottom: 20 }}>
@@ -172,7 +172,7 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({ isOpen, onClose,
         {/* Scan Results Display */}
         {scanResult && (
           <div>
-            <div style={{ background: '#090d16', borderRadius: 10, padding: 16, border: '1px solid rgba(16, 185, 129, 0.3)', marginBottom: 16 }}>
+            <div style={{ background: '#ffffff', borderRadius: 10, padding: 16, border: '1px solid rgba(16, 185, 129, 0.3)', marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div>
                   <span className="badge badge-emerald">AI Recognition: {Math.round(scanResult.confidence * 100)}% Match</span>
@@ -187,20 +187,20 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({ isOpen, onClose,
 
               {/* Price Range & Weight Range */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 12 }}>
-                <div style={{ background: '#1e293b', padding: 12, borderRadius: 8 }}>
+                <div style={{ background: '#f1f5f9', padding: 12, borderRadius: 8 }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Estimated Market Payout</div>
-                  <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#34d399' }}>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#047857' }}>
                     ₹ {scanResult.estimated_value_range?.min_inr} – ₹ {scanResult.estimated_value_range?.max_inr}
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Dynamic spot price estimate</div>
+                  <div style={{ fontSize: '0.7rem', color: '#475569' }}>Dynamic spot price estimate</div>
                 </div>
 
-                <div style={{ background: '#1e293b', padding: 12, borderRadius: 8 }}>
+                <div style={{ background: '#f1f5f9', padding: 12, borderRadius: 8 }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Estimated Unit Mass</div>
                   <div style={{ fontSize: '1.3rem', fontWeight: 800 }}>
                     {scanResult.estimated_weight_range?.min_kg} – {scanResult.estimated_weight_range?.max_kg} kg
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Subject to physical scale weighing</div>
+                  <div style={{ fontSize: '0.7rem', color: '#475569' }}>Subject to physical scale weighing</div>
                 </div>
               </div>
 
@@ -221,18 +221,18 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({ isOpen, onClose,
                 <button
                   type="button"
                   onClick={() => setIsManualOverride(!isManualOverride)}
-                  style={{ background: 'transparent', border: 'none', color: '#38bdf8', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
+                  style={{ background: 'transparent', border: 'none', color: '#0369a1', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
                 >
                   {isManualOverride ? 'Hide Category Override' : 'AI result is incorrect? Correct category manually'}
                 </button>
 
                 {isManualOverride && (
                   <div style={{ marginTop: 8 }}>
-                    <label style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: 4 }}>Select Verified Category</label>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: '#475569', marginBottom: 4 }}>Select Verified Category</label>
                     <select
                       value={selectedCategory}
                       onChange={(e) => setSelectedCategory(Number(e.target.value))}
-                      style={{ width: '100%', padding: '8px', borderRadius: 6, background: '#1e293b', color: '#fff', border: '1px solid var(--border-color)' }}
+                      style={{ width: '100%', padding: '8px', borderRadius: 6, background: '#f1f5f9', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
                     >
                       <option value={1}>CRT Monitors & TVs (CEEW1)</option>
                       <option value={2}>LCD/LED Flat Displays (CEEW1)</option>
@@ -249,11 +249,11 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({ isOpen, onClose,
 
             {/* Condition & Pickup Address Form */}
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: 4, color: '#cbd5e1' }}>Item Physical Condition</label>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: 4, color: '#334155' }}>Item Physical Condition</label>
               <select
                 value={condition}
                 onChange={(e) => setCondition(e.target.value)}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 6, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)' }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 6, background: '#ffffff', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
               >
                 <option value="INTACT">INTACT (Complete assembly, unbroken glass/seal)</option>
                 <option value="PARTIAL_DISASSEMBLED">PARTIAL DISASSEMBLED (Some components removed)</option>
@@ -262,12 +262,12 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({ isOpen, onClose,
             </div>
 
             <div style={{ marginBottom: 18 }}>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: 4, color: '#cbd5e1' }}>Pickup Address</label>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: 4, color: '#334155' }}>Pickup Address</label>
               <input
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 6, background: '#090d16', color: '#fff', border: '1px solid var(--border-color)' }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 6, background: '#ffffff', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
               />
             </div>
 

@@ -81,9 +81,9 @@ export const RoleLayout: React.FC = () => {
       >
         <div style={{ maxWidth: 1400, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
           {/* Brand Logo */}
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: '#fff' }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--text-primary)' }}>
             <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg, #10b981, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Recycle size={20} color="#fff" />
+              <Recycle size={20} color="var(--text-primary)" />
             </div>
             <div>
               <div style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -97,7 +97,7 @@ export const RoleLayout: React.FC = () => {
           {/* Role & Switcher Bar */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             {/* Quick Role Switcher for Dev Testing */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1e293b', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f1f5f9', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border-color)' }}>
               {getRoleIcon(user?.role)}
               <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Active Role:</span>
               <select
@@ -105,7 +105,7 @@ export const RoleLayout: React.FC = () => {
                 onChange={handleRoleChange}
                 style={{
                   background: 'transparent',
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   border: 'none',
                   fontWeight: 600,
                   fontSize: '0.85rem',
@@ -113,24 +113,24 @@ export const RoleLayout: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                <option value="USER" style={{ background: '#1e293b' }}>USER (Citizen)</option>
-                <option value="INFORMAL_AGGREGATOR" style={{ background: '#1e293b' }}>INFORMAL AGGREGATOR</option>
-                <option value="COLLECTION_COLLECTOR" style={{ background: '#1e293b' }}>COLLECTION COLLECTOR</option>
-                <option value="AUTHORIZED_RECYCLER" style={{ background: '#1e293b' }}>AUTHORIZED RECYCLER</option>
-                <option value="GOVERNMENT_ADMIN" style={{ background: '#1e293b' }}>GOVERNMENT ADMIN</option>
+                <option value="USER" style={{ background: '#f1f5f9' }}>USER (Citizen)</option>
+                <option value="INFORMAL_AGGREGATOR" style={{ background: '#f1f5f9' }}>INFORMAL AGGREGATOR</option>
+                <option value="COLLECTION_COLLECTOR" style={{ background: '#f1f5f9' }}>COLLECTION COLLECTOR</option>
+                <option value="AUTHORIZED_RECYCLER" style={{ background: '#f1f5f9' }}>AUTHORIZED RECYCLER</option>
+                <option value="GOVERNMENT_ADMIN" style={{ background: '#f1f5f9' }}>GOVERNMENT ADMIN</option>
               </select>
             </div>
 
             {/* Language Switcher */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#1e293b', padding: '4px 8px', borderRadius: 6 }}>
-              <Languages size={14} color="#94a3b8" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#f1f5f9', padding: '4px 8px', borderRadius: 6 }}>
+              <Languages size={14} color="#475569" />
               {['en', 'hi', 'mr'].map((lang) => (
                 <button
                   key={lang}
                   onClick={() => handleLanguageChange(lang)}
                   style={{
                     background: language === lang ? '#10b981' : 'transparent',
-                    color: language === lang ? '#fff' : '#94a3b8',
+                    color: language === lang ? 'var(--text-primary)' : '#475569',
                     border: 'none',
                     borderRadius: 4,
                     padding: '2px 6px',
@@ -147,8 +147,8 @@ export const RoleLayout: React.FC = () => {
 
             {/* System Connection Pill */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: isHealthy ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)', padding: '6px 12px', borderRadius: 20, border: `1px solid ${isHealthy ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)'}` }}>
-              <Activity size={14} color={isHealthy ? '#34d399' : '#fb7185'} />
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isHealthy ? '#34d399' : '#fb7185' }}>
+              <Activity size={14} color={isHealthy ? '#047857' : '#fb7185'} />
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isHealthy ? '#047857' : '#fb7185' }}>
                 {healthStatus}
               </span>
             </div>
@@ -160,12 +160,12 @@ export const RoleLayout: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                background: '#1e293b',
+                background: '#f1f5f9',
                 padding: '6px 12px',
                 borderRadius: 8,
                 border: '1px solid var(--border-color)',
                 textDecoration: 'none',
-                color: '#fff',
+                color: 'var(--text-primary)',
                 fontSize: '0.8rem',
               }}
             >
@@ -177,7 +177,7 @@ export const RoleLayout: React.FC = () => {
                   fontSize: '0.65rem',
                   padding: '1px 6px',
                   background: user?.account_status === 'ACTIVE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-                  color: user?.account_status === 'ACTIVE' ? '#34d399' : '#f59e0b',
+                  color: user?.account_status === 'ACTIVE' ? '#047857' : '#f59e0b',
                   border: 'none',
                 }}
               >
@@ -197,7 +197,7 @@ export const RoleLayout: React.FC = () => {
                 gap: 6,
                 background: 'transparent',
                 border: '1px solid var(--border-color)',
-                color: '#94a3b8',
+                color: '#475569',
                 padding: '6px 12px',
                 borderRadius: 8,
                 cursor: 'pointer',

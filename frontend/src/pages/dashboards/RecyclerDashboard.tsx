@@ -66,7 +66,7 @@ export const RecyclerDashboard: React.FC = () => {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(168, 85, 247, 0.15)', padding: '8px 14px', borderRadius: 8, border: '1px solid rgba(168, 85, 247, 0.3)' }}>
             <Award size={18} className="text-purple-400" />
-            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#c084fc' }}>Verified CPCB R2 Recycler</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#7e22ce' }}>Verified CPCB R2 Recycler</span>
           </div>
         </div>
       </div>
@@ -75,20 +75,20 @@ export const RecyclerDashboard: React.FC = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px', marginBottom: '24px' }}>
         <div className="glass-panel" style={{ padding: '20px' }}>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 8 }}>EPR Quota Target Progress</div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#c084fc' }}>3,420 / 5,000 MT</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#7e22ce' }}>3,420 / 5,000 MT</div>
           <div style={{ fontSize: '0.8rem', color: '#10b981', marginTop: 4 }}>68.4% annual statutory target completed</div>
         </div>
 
         <div className="glass-panel" style={{ padding: '20px' }}>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 8 }}>Available Aggregator Shipments</div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#38bdf8' }}>2 Batches</div>
-          <div style={{ fontSize: '0.8rem', color: '#38bdf8', marginTop: 4 }}>1,270 kg secondary feedstock ready</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0369a1' }}>2 Batches</div>
+          <div style={{ fontSize: '0.8rem', color: '#0369a1', marginTop: 4 }}>1,270 kg secondary feedstock ready</div>
         </div>
 
         <div className="glass-panel" style={{ padding: '20px' }}>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 8 }}>Active Form 6 Manifests</div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#34d399' }}>12 Consignments</div>
-          <div style={{ fontSize: '0.8rem', color: '#34d399', marginTop: 4 }}>100% auditable chain of custody</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#047857' }}>12 Consignments</div>
+          <div style={{ fontSize: '0.8rem', color: '#047857', marginTop: 4 }}>100% auditable chain of custody</div>
         </div>
       </div>
 
@@ -103,24 +103,24 @@ export const RecyclerDashboard: React.FC = () => {
                 key={b.id}
                 onClick={() => setSelectedBatch(b)}
                 style={{
-                  background: selectedBatch?.id === b.id ? '#1e293b' : '#090d16',
+                  background: selectedBatch?.id === b.id ? '#f1f5f9' : '#ffffff',
                   borderRadius: 10,
                   padding: 16,
-                  border: selectedBatch?.id === b.id ? '1px solid #c084fc' : '1px solid var(--border-color)',
+                  border: selectedBatch?.id === b.id ? '1px solid #7e22ce' : '1px solid var(--border-color)',
                   cursor: 'pointer',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#fff' }}>{b.code}</div>
+                  <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>{b.code}</div>
                   <span className="badge badge-purple">{b.cpcb_code}</span>
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#cbd5e1', marginBottom: 6 }}>{b.category}</div>
+                <div style={{ fontSize: '0.85rem', color: '#334155', marginBottom: 6 }}>{b.category}</div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 8 }}>
                   Consignor: {b.aggregator_name}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
-                  <span style={{ color: '#38bdf8', fontWeight: 700 }}>Total Mass: {b.weight_kg} kg</span>
-                  <span style={{ color: '#34d399', fontWeight: 800 }}>Total Bid: ₹ {(b.weight_kg * b.offered_price_per_kg).toLocaleString()}</span>
+                  <span style={{ color: '#0369a1', fontWeight: 700 }}>Total Mass: {b.weight_kg} kg</span>
+                  <span style={{ color: '#047857', fontWeight: 800 }}>Total Bid: ₹ {(b.weight_kg * b.offered_price_per_kg).toLocaleString()}</span>
                 </div>
               </div>
             ))}
@@ -138,26 +138,26 @@ export const RecyclerDashboard: React.FC = () => {
               <span className="badge badge-emerald">E-Waste Rules 2022</span>
             </div>
 
-            <div style={{ background: '#090d16', borderRadius: 8, padding: 14, border: '1px solid var(--border-color)', marginBottom: 16, fontSize: '0.85rem' }}>
+            <div style={{ background: '#ffffff', borderRadius: 8, padding: 14, border: '1px solid var(--border-color)', marginBottom: 16, fontSize: '0.85rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 10 }}>
                 <div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Consignor (Informal Aggregator)</div>
-                  <div style={{ fontWeight: 700, color: '#fff' }}>{selectedBatch.aggregator_name}</div>
+                  <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{selectedBatch.aggregator_name}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Consignee (Formal Recycler)</div>
-                  <div style={{ fontWeight: 700, color: '#c084fc' }}>EcoClean Recyclers Pvt Ltd</div>
+                  <div style={{ fontWeight: 700, color: '#7e22ce' }}>EcoClean Recyclers Pvt Ltd</div>
                 </div>
               </div>
 
               <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 10, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
                 <div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>CPCB Schedule I Code</div>
-                  <div style={{ fontWeight: 700, color: '#38bdf8' }}>{selectedBatch.cpcb_code}</div>
+                  <div style={{ fontWeight: 700, color: '#0369a1' }}>{selectedBatch.cpcb_code}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Certified Mass</div>
-                  <div style={{ fontWeight: 700, color: '#34d399' }}>{selectedBatch.weight_kg} kg</div>
+                  <div style={{ fontWeight: 700, color: '#047857' }}>{selectedBatch.weight_kg} kg</div>
                 </div>
               </div>
             </div>
@@ -174,14 +174,14 @@ export const RecyclerDashboard: React.FC = () => {
 
             {showManifest && (
               <div style={{ marginTop: 16, padding: 12, borderRadius: 8, background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', fontSize: '0.8rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#c084fc', fontWeight: 800, marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#7e22ce', fontWeight: 800, marginBottom: 4 }}>
                   <CheckCircle size={16} />
                   <span>Manifest MAN-2026-004812 Signed & Lodged!</span>
                 </div>
-                <div style={{ color: '#cbd5e1' }}>
-                  SHA-256 Hash: <code style={{ color: '#38bdf8' }}>e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</code>
+                <div style={{ color: '#334155' }}>
+                  SHA-256 Hash: <code style={{ color: '#0369a1' }}>e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</code>
                 </div>
-                <div style={{ color: '#94a3b8', marginTop: 4 }}>
+                <div style={{ color: '#475569', marginTop: 4 }}>
                   EPR Credits allocated: <strong>420.0 Units</strong> ready for manufacturer compliance certificates.
                 </div>
               </div>

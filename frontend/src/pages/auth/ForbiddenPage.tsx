@@ -81,12 +81,12 @@ export const ForbiddenPage: React.FC<ForbiddenPageProps> = ({ requiredRoles, use
           403 Access Denied
         </span>
 
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', marginBottom: 8 }}>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8 }}>
           Unauthorized Role Access
         </h1>
 
         <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 20 }}>
-          Your current account role <strong style={{ color: '#38bdf8' }}>{userRole || user?.role || 'GUEST'}</strong> does
+          Your current account role <strong style={{ color: '#0369a1' }}>{userRole || user?.role || 'GUEST'}</strong> does
           not possess permission to access this protected sector. In compliance with CPCB E-Waste Security Directives, access is
           strictly restricted.
         </p>
@@ -94,11 +94,11 @@ export const ForbiddenPage: React.FC<ForbiddenPageProps> = ({ requiredRoles, use
         {requiredRoles && requiredRoles.length > 0 && (
           <div
             style={{
-              background: '#090d16',
+              background: '#ffffff',
               padding: '12px 16px',
               borderRadius: 8,
               fontSize: '0.8rem',
-              color: '#94a3b8',
+              color: '#475569',
               marginBottom: 24,
               border: '1px solid var(--border-color)',
             }}

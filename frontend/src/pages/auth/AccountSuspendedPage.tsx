@@ -11,7 +11,7 @@ export const AccountSuspendedPage: React.FC = () => {
     <div
       style={{
         minHeight: '100vh',
-        background: '#0a0e17',
+        background: '#f1f5f9',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -60,12 +60,12 @@ export const AccountSuspendedPage: React.FC = () => {
           </span>
         </div>
 
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', marginTop: 12 }}>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: 12 }}>
           Account Operations Suspended
         </h1>
 
-        <p style={{ fontSize: '0.9rem', color: '#94a3b8', marginTop: 10, lineHeight: 1.6 }}>
-          Operations for <strong style={{ color: '#fff' }}>{user?.full_name}</strong> have been temporarily restricted by
+        <p style={{ fontSize: '0.9rem', color: '#475569', marginTop: 10, lineHeight: 1.6 }}>
+          Operations for <strong style={{ color: 'var(--text-primary)' }}>{user?.full_name}</strong> have been temporarily restricted by
           the regulatory oversight authority due to an administrative or environmental compliance audit under the CPCB E-Waste
           Rules 2022.
         </p>
@@ -75,7 +75,7 @@ export const AccountSuspendedPage: React.FC = () => {
             style={{
               marginTop: 16,
               padding: '12px',
-              background: '#090d16',
+              background: '#ffffff',
               borderRadius: 8,
               border: '1px solid var(--border-color)',
               color: '#fb7185',

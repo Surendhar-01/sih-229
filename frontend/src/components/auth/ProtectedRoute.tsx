@@ -15,8 +15,8 @@ export const ProtectedRoute: React.FC = () => {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#0a0e17',
-          color: '#fff',
+          background: '#f1f5f9',
+          color: 'var(--text-primary)',
         }}
       >
         <div
@@ -30,7 +30,7 @@ export const ProtectedRoute: React.FC = () => {
             marginBottom: 16,
           }}
         />
-        <div style={{ fontSize: '0.9rem', color: '#94a3b8' }}>Verifying Platform Authorization...</div>
+        <div style={{ fontSize: '0.9rem', color: '#475569' }}>Verifying Platform Authorization...</div>
       </div>
     );
   }

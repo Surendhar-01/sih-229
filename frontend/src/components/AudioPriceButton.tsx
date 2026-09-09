@@ -56,7 +56,7 @@ export const AudioPriceButton: React.FC<AudioPriceButtonProps> = ({ categoryName
         gap: 6,
         background: isPlaying ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.08)',
         border: '1px solid var(--border-color)',
-        color: isPlaying ? '#34d399' : '#cbd5e1',
+        color: isPlaying ? '#047857' : '#334155',
         padding: '6px 12px',
         borderRadius: 20,
         fontSize: '0.8rem',

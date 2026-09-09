@@ -142,7 +142,7 @@ export const UserDashboard: React.FC = () => {
         {loading ? (
           <div style={{ textAlign: 'center', padding: 24, color: 'var(--text-secondary)' }}>Loading your lots...</div>
         ) : lots.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '32px 16px', background: '#090d16', borderRadius: 8 }}>
+          <div style={{ textAlign: 'center', padding: '32px 16px', background: '#ffffff', borderRadius: 8 }}>
             <p style={{ color: 'var(--text-secondary)', marginBottom: 12 }}>No e-waste lots created yet.</p>
             <button className="btn-primary" onClick={() => navigate('/user/lots/create')}>
               <Plus size={16} />
@@ -156,7 +156,7 @@ export const UserDashboard: React.FC = () => {
                 key={lot.id}
                 onClick={() => navigate(`/user/lots/${lot.id}`)}
                 style={{
-                  background: '#090d16',
+                  background: '#ffffff',
                   borderRadius: 10,
                   padding: 16,
                   border: '1px solid var(--border-color)',
@@ -171,18 +171,18 @@ export const UserDashboard: React.FC = () => {
               >
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#fff' }}>{lot.lot_code}</span>
+                    <span style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>{lot.lot_code}</span>
                     {getStatusBadge(lot.status)}
                     <span className="badge badge-purple">{lot.category_name || 'Electronics'}</span>
                   </div>
-                  <div style={{ fontSize: '0.85rem', color: '#cbd5e1', marginBottom: 4 }}>{lot.description}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#334155', marginBottom: 4 }}>{lot.description}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: '0.8rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <MapPin size={13} /> {lot.pickup_address}
                     </span>
                     <span>Mass: {lot.verified_weight_kg ? `${lot.verified_weight_kg} kg (Verified)` : `~${lot.estimated_weight_kg} kg`}</span>
                     {lot.assigned_collector_name && (
-                      <span style={{ color: '#38bdf8' }}>Collector: {lot.assigned_collector_name}</span>
+                      <span style={{ color: '#0369a1' }}>Collector: {lot.assigned_collector_name}</span>
                     )}
                   </div>
                 </div>
@@ -191,7 +191,7 @@ export const UserDashboard: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, textAlign: 'right' }}>
                   {/* Payout Information */}
                   <div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#34d399' }}>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#047857' }}>
                       ₹ {lot.agreed_purchase_price || lot.ai_estimated_min_value}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Payout Value</div>
@@ -200,10 +200,10 @@ export const UserDashboard: React.FC = () => {
                   {/* Doorstep Verification OTP */}
                   {lot.pickup_otp && (
                     <div style={{ background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '6px 12px', borderRadius: 8, textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 700, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <div style={{ fontSize: '0.65rem', color: '#b45309', fontWeight: 700, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 4 }}>
                         <KeyRound size={12} /> Doorstep OTP
                       </div>
-                      <div style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '0.1em', color: '#fff' }}>
+                      <div style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--text-primary)' }}>
                         {lot.pickup_otp}
                       </div>
                     </div>
