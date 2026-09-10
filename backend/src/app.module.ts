@@ -20,6 +20,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AiModule } from './ai/ai.module';
 import { AdminModule } from './admin/admin.module';
+import { DatasetsModule } from './datasets/datasets.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { AdminModule } from './admin/admin.module';
     NotificationsModule,
     AiModule,
     AdminModule,
+    DatasetsModule,
   ],
   providers: [SupabaseService],
   exports: [SupabaseService],

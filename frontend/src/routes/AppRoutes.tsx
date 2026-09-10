@@ -22,6 +22,7 @@ import { CollectorAssignmentsPage } from '../pages/collector/CollectorAssignment
 import { CollectorAssignmentDetailPage } from '../pages/collector/CollectorAssignmentDetailPage';
 import { CollectorProfilePage } from '../pages/collector/CollectorProfilePage';
 import { VernacularCollectorApp } from '../pages/collector/VernacularCollectorApp';
+import { DatasetComplianceHub } from '../pages/datasets/DatasetComplianceHub';
 import { RecyclerDashboard } from '../pages/dashboards/RecyclerDashboard';
 import { RecyclerOpportunitiesPage } from '../pages/recycler/RecyclerOpportunitiesPage';
 import { RecyclerQuotesPage } from '../pages/recycler/RecyclerQuotesPage';
@@ -176,6 +177,8 @@ export const AppRoutes: React.FC = () => {
       {/* ------------------------------------------------------------- */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/field-app" element={<VernacularCollectorApp />} />
+      <Route path="/datasets" element={<DatasetComplianceHub />} />
+      <Route path="/admin/datasets" element={<DatasetComplianceHub />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
