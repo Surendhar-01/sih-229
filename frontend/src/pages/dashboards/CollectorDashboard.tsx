@@ -24,12 +24,14 @@ import {
   Zap,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { CollectorVernacularDashboardView } from '../../components/collector/vernacular/CollectorVernacularDashboardView';
 
 export const CollectorDashboard: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
+  const [dashboardMode, setDashboardMode] = useState<'standard' | 'vernacular'>('standard');
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [availability, setAvailability] = useState<'AVAILABLE' | 'BUSY' | 'OFFLINE'>('AVAILABLE');
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
@@ -193,8 +195,45 @@ export const CollectorDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Offline / Online Badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Offline / Online Badge & Mode Toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', background: '#f1f5f9', padding: 3, borderRadius: 12, border: '1px solid #e2e8f0' }}>
+              <button
+                type="button"
+                onClick={() => setDashboardMode('standard')}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 9,
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: dashboardMode === 'standard' ? '#0f172a' : 'transparent',
+                  color: dashboardMode === 'standard' ? '#ffffff' : '#64748b',
+                  transition: 'all 0.15s',
+                }}
+              >
+                Standard View
+              </button>
+              <button
+                type="button"
+                onClick={() => setDashboardMode('vernacular')}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 9,
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: dashboardMode === 'vernacular' ? '#047857' : 'transparent',
+                  color: dashboardMode === 'vernacular' ? '#ffffff' : '#64748b',
+                  transition: 'all 0.15s',
+                }}
+              >
+                📱 कबाड़ी साथी
+              </button>
+            </div>
+
             <div
               style={{
                 display: 'inline-flex',
@@ -315,6 +354,114 @@ export const CollectorDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {dashboardMode === 'vernacular' ? (
+        <CollectorVernacularDashboardView
+          isOffline={!isOnline}
+          onExitVernacularMode={() => setDashboardMode('standard')}
+        />
+      ) : (
+        <>
+          {/* ------------------------------------------------------------- */}
+          {/* VERNACULAR MOBILE APP BANNER (ALL 8 SCREENS)                  */}
+          {/* ------------------------------------------------------------- */}
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%)',
+              borderRadius: 16,
+              padding: '16px 20px',
+              color: '#ffffff',
+              marginBottom: 20,
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              boxShadow: '0 6px 20px rgba(6, 78, 59, 0.25)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div
+                style={{
+                  width: 46,
+                  height: 46,
+                  borderRadius: 12,
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.4rem',
+                }}
+              >
+                📱
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.01em' }}>
+                    ग्रामीण / अनौपचारिक कबाड़ी मोड (Vernacular Mobile App)
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '0.65rem',
+                      fontWeight: 800,
+                      background: '#34d399',
+                      color: '#064e3b',
+                      padding: '2px 8px',
+                      borderRadius: 10,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    8 Screens
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.78rem', opacity: 0.9, marginTop: 2 }}>
+                  बोलकर बताएं • आज के भाव • कैमरा स्कैन • डिजिटल रसीद • हेल्पलाइन • सुरक्षा सलाह
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setDashboardMode('vernacular')}
+                style={{
+                  background: '#ffffff',
+                  color: '#064e3b',
+                  padding: '10px 16px',
+                  borderRadius: 12,
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                }}
+              >
+                <span>📱 Switch to Field View</span>
+              </button>
+              <Link
+                to="/collector/field-app"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  color: '#ffffff',
+                  padding: '10px 16px',
+                  borderRadius: 12,
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                }}
+              >
+                <span>Full Showcase</span>
+                <ArrowRight size={15} />
+              </Link>
+            </div>
+          </div>
 
       {/* ------------------------------------------------------------- */}
       {/* 2. PROMINENT ACTION BUTTONS (LOW-LITERACY FRIENDLY)           */}
@@ -578,6 +725,8 @@ export const CollectorDashboard: React.FC = () => {
           <strong>OHS Safety Protocol (பாதுகாப்பு குறிப்பு):</strong> Wear insulated rubber gloves when handling lithium-ion batteries or broken CRT display glass. Do not puncture cell casings.
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };

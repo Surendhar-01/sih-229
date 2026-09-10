@@ -21,6 +21,7 @@ import { CollectorDashboard } from '../pages/dashboards/CollectorDashboard';
 import { CollectorAssignmentsPage } from '../pages/collector/CollectorAssignmentsPage';
 import { CollectorAssignmentDetailPage } from '../pages/collector/CollectorAssignmentDetailPage';
 import { CollectorProfilePage } from '../pages/collector/CollectorProfilePage';
+import { VernacularCollectorApp } from '../pages/collector/VernacularCollectorApp';
 import { RecyclerDashboard } from '../pages/dashboards/RecyclerDashboard';
 import { RecyclerOpportunitiesPage } from '../pages/recycler/RecyclerOpportunitiesPage';
 import { RecyclerQuotesPage } from '../pages/recycler/RecyclerQuotesPage';
@@ -136,6 +137,8 @@ export const AppRoutes: React.FC = () => {
             <Route path="/collector/assignments" element={<CollectorAssignmentsPage />} />
             <Route path="/collector/assignments/:assignmentId" element={<CollectorAssignmentDetailPage />} />
             <Route path="/collector/profile" element={<CollectorProfilePage />} />
+            <Route path="/collector/field-app" element={<VernacularCollectorApp />} />
+            <Route path="/collector/mobile" element={<VernacularCollectorApp />} />
             <Route path="/collector/earnings" element={<FinancePage view="collector" />} />
             <Route path="/collector/*" element={<CollectorDashboard />} />
           </Route>
@@ -172,6 +175,7 @@ export const AppRoutes: React.FC = () => {
       {/* Root Landing Page & Wildcard Fallback                          */}
       {/* ------------------------------------------------------------- */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/field-app" element={<VernacularCollectorApp />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { apiClient } from '../../services/api';
-import { Camera, Clock, Sparkles, UserCheck, ShieldCheck, MapPin, KeyRound, ArrowRight, Plus, ChevronRight } from 'lucide-react';
+import { Camera, Clock, Sparkles, UserCheck, ShieldCheck, MapPin, KeyRound, ArrowRight, Plus, ChevronRight, Volume2, TrendingUp, TrendingDown, Phone, AlertTriangle, Ban } from 'lucide-react';
 import { AiScannerModal } from '../../components/AiScannerModal';
 import { AudioPriceButton } from '../../components/AudioPriceButton';
+import { COMMODITY_PRICES, SAFETY_ADVICE_ITEMS } from '../../components/collector/vernacular/vernacularTranslations';
+import { speakVernacularText } from '../../components/collector/vernacular/speechAndAudio';
 
 export const UserDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -119,6 +121,155 @@ export const UserDashboard: React.FC = () => {
             {lots.reduce((acc, curr) => acc + (curr.verified_weight_kg || curr.estimated_weight_kg || 10), 0).toFixed(1)} kg
           </div>
           <div style={{ fontSize: '0.8rem', color: '#06b6d4', marginTop: 4 }}>Saved from informal acid baths & burning</div>
+        </div>
+      </div>
+
+      {/* ------------------------------------------------------------- */}
+      {/* VERNACULAR FEATURES: TODAY'S RATES, SAFETY & HELPLINE           */}
+      {/* ------------------------------------------------------------- */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+        {/* Card 1: Today's Market Scrap Rates (आज के भाव) */}
+        <div className="glass-panel" style={{ padding: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }}>
+                <TrendingUp size={18} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0 }}>आज के भाव (Today's E-Waste Rates)</h3>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>CPCB Floor MSP Benchmarks</span>
+              </div>
+            </div>
+            <span className="badge badge-emerald" style={{ fontSize: '0.68rem' }}>Live Rates</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {COMMODITY_PRICES.map((item) => (
+              <div
+                key={item.key}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 12px',
+                  borderRadius: 12,
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{item.name.hi} ({item.name.en})</div>
+                  <div style={{ fontSize: '0.75rem', color: '#10b981', fontFamily: 'monospace', fontWeight: 700 }}>
+                    {item.priceRange}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span
+                    style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 800,
+                      padding: '2px 8px',
+                      borderRadius: 10,
+                      background: item.trendDirection === 'up' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
+                      color: item.trendDirection === 'up' ? '#10b981' : '#f43f5e',
+                    }}
+                  >
+                    {item.trendDirection === 'up' ? '▲' : '▼'} {item.trendPercent}%
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => speakVernacularText(item.audioText.hi, 'hi')}
+                    style={{
+                      background: 'rgba(16, 185, 129, 0.1)',
+                      border: '1px solid rgba(16, 185, 129, 0.2)',
+                      color: '#10b981',
+                      borderRadius: '50%',
+                      width: 28,
+                      height: 28,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                    }}
+                    title="Listen to rate in Hindi"
+                  >
+                    <Volume2 size={13} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Card 2: Safety Advice & Offline IVR Helpline */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Safety Advice */}
+          <div className="glass-panel" style={{ padding: '20px', flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(239, 68, 68, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
+                  <ShieldCheck size={18} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0 }}>सुरक्षा सलाह (Citizen Safety Advice)</h3>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Hazards to avoid before pickup</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => speakVernacularText('सुरक्षा सलाह: बैटरी को आग में न जलाएं और सीआरटी मॉनिटर को न तोड़ें।', 'hi')}
+                className="btn-secondary"
+                style={{ padding: '4px 10px', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: 4 }}
+              >
+                <Volume2 size={12} />
+                <span>Audio</span>
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Ban size={20} color="#ef4444" style={{ flexShrink: 0 }} />
+                <div style={{ fontSize: '0.8rem', color: '#fca5a5' }}>
+                  <strong>बैटरी को आग में न जलाएं:</strong> लिथियम बैटरियां विस्फोट कर सकती हैं। इन्हें अलग सूखे बॉक्स में रखें।
+                </div>
+              </div>
+
+              <div style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <AlertTriangle size={20} color="#f59e0b" style={{ flexShrink: 0 }} />
+                <div style={{ fontSize: '0.8rem', color: '#fcd34d' }}>
+                  <strong>CRT तोड़ने से बचें:</strong> सीआरटी मॉनिटर का कांच और फॉस्फोरस पाउडर फेफड़ों के लिए अत्यंत विषैला होता है।
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Toll-Free IVR Helpline Card */}
+          <div
+            className="glass-panel"
+            style={{
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'linear-gradient(135deg, rgba(6, 78, 59, 0.4), rgba(4, 120, 87, 0.2))',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
+                <Phone size={18} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>किसी भी साधारण फोन से भाव जानें (Toll-Free Helpline)</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#10b981', fontFamily: 'monospace' }}>1800-XXX-XXXX</div>
+              </div>
+            </div>
+
+            <span className="badge badge-emerald" style={{ fontSize: '0.7rem' }}>24x7 Available</span>
+          </div>
         </div>
       </div>
 
