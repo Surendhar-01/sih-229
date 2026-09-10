@@ -42,4 +42,10 @@ export class AiController {
   async detectAnomaly(@Body() payload: any) {
     return this.aiService.detectAnomaly(payload);
   }
+
+  @Post('voice-intent')
+  @ApiOperation({ summary: 'Voice transcript intent and role detection' })
+  async voiceIntent(@Body() payload: any) {
+    return this.aiService.detectVoiceIntent(payload);
+  }
 }

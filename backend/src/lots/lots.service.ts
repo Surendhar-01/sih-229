@@ -311,7 +311,9 @@ export class LotsService {
     // If Supabase is connected, write through to PostgreSQL
     if (this.supabaseService.isConfigured()) {
       try {
-        const client = this.supabaseService.getClient();
+        // The Nest gateway has already validated the caller. Use its service client
+        // so collector-led intake is persisted under the collector's owner ID.
+        const client = this.supabaseService.getAdminClient();
         const { data: insertedLot, error: lotErr } = await client
           .from('material_lots')
           .insert([{
@@ -401,7 +403,7 @@ export class LotsService {
   async getMyLots(userId: string): Promise<LotRecord[]> {
     if (this.supabaseService.isConfigured()) {
       try {
-        const client = this.supabaseService.getClient();
+        const client = this.supabaseService.getAdminClient();
         const { data } = await client
           .from('material_lots')
           .select('*, images:lot_images(*)')
@@ -613,4 +615,3 @@ export class LotsService {
     return categories[categoryId] || 'General E-Waste';
   }
 }
-

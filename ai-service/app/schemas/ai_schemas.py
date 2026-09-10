@@ -7,6 +7,16 @@ class HealthResponse(BaseModel):
     version: str = "1.0.0"
     mode: str = "development_mock"
 
+class VoiceIntentRequest(BaseModel):
+    transcript: str = Field(min_length=1, max_length=1000)
+    language: str = "en"
+
+class VoiceIntentResponse(BaseModel):
+    transcript: str
+    intent: str
+    role: Optional[str] = None
+    confidence: float
+
 class ClassificationRequest(BaseModel):
     image_url: Optional[str] = None
     image_base64: Optional[str] = None

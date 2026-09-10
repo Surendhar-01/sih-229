@@ -93,4 +93,14 @@ export class AiService {
       };
     }
   }
+
+  async detectVoiceIntent(payload: any) {
+    try {
+      const response = await axios.post(`${this.aiUrl}/voice-intent`, payload, { timeout: 5000 });
+      return response.data;
+    } catch (err) {
+      this.logger.warn(`Voice intent service unavailable: ${err.message}`);
+      throw new ExternalAiServiceException('Voice understanding is temporarily unavailable. Please choose an option on screen.');
+    }
+  }
 }

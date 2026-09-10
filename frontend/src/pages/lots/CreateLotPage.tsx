@@ -37,6 +37,8 @@ export const CreateLotPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const isCollectorIntake = user?.role === 'COLLECTION_COLLECTOR';
+  const lotsHomeRoute = isCollectorIntake ? '/collector/intake/lots' : '/user/lots';
 
   // Wizard Step (1: Photos & AI, 2: Condition & Weight, 3: Location & Price, 4: Review)
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -330,7 +332,7 @@ export const CreateLotPage: React.FC = () => {
         <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
           <button
             type="button"
-            onClick={() => navigate('/user/lots')}
+            onClick={() => navigate(lotsHomeRoute)}
             className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold shadow-lg transition"
           >
             {t('lot.viewMyLots')}
@@ -358,9 +360,9 @@ export const CreateLotPage: React.FC = () => {
       {/* Page Header */}
       <div className="lot-page-header">
         <div>
-          <div className="lot-eyebrow"><Sparkles className="w-3.5 h-3.5" /> AI E-WASTE INSPECTION WORKSPACE</div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">{t('lot.createTitle')}</h1>
-          <p className="text-slate-400 text-sm mt-1">Sell or responsibly recycle your electronics with AI-powered valuation and verified collection.</p>
+          <div className="lot-eyebrow"><Sparkles className="w-3.5 h-3.5" /> {isCollectorIntake ? 'FIELD INTAKE & AI INSPECTION' : 'AI E-WASTE INSPECTION WORKSPACE'}</div>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight">{isCollectorIntake ? 'Register e-waste intake' : t('lot.createTitle')}</h1>
+          <p className="text-slate-400 text-sm mt-1">{isCollectorIntake ? 'Capture customer e-waste, run the AI inspection, record weight and create a tracked collection lot.' : 'Sell or responsibly recycle your electronics with AI-powered valuation and verified collection.'}</p>
         </div>
         <div className="lot-trust-note"><ShieldCheck className="w-4 h-4" /> Secure photo processing</div>
       </div>

@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthLayout } from '../layouts/AuthLayout';
 import { RoleLayout } from '../layouts/RoleLayout';
+import { StatusLayout } from '../layouts/StatusLayout';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
 import { AccountPendingPage } from '../pages/auth/AccountPendingPage';
@@ -79,10 +80,12 @@ export const AppRoutes: React.FC = () => {
       {/* Authenticated Status Pages (Pending, Suspended, Forbidden)     */}
       {/* ------------------------------------------------------------- */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/pending" element={<AccountPendingPage />} />
-        <Route path="/suspended" element={<AccountSuspendedPage />} />
-        <Route path="/rejected" element={<AccountRejectedPage />} />
-        <Route path="/forbidden" element={<ForbiddenPage />} />
+        <Route element={<StatusLayout />}>
+          <Route path="/pending" element={<AccountPendingPage />} />
+          <Route path="/suspended" element={<AccountSuspendedPage />} />
+          <Route path="/rejected" element={<AccountRejectedPage />} />
+          <Route path="/forbidden" element={<ForbiddenPage />} />
+        </Route>
 
         {/* Profile Page (Accessible to all authenticated users) */}
         <Route element={<RoleLayout />}>
@@ -127,6 +130,9 @@ export const AppRoutes: React.FC = () => {
         <Route element={<RoleProtectedRoute allowedRoles={['COLLECTION_COLLECTOR']} />}>
           <Route element={<RoleLayout />}>
             <Route path="/collector/dashboard" element={<CollectorDashboard />} />
+            <Route path="/collector/intake" element={<CreateLotPage />} />
+            <Route path="/collector/intake/lots" element={<MyLotsPage />} />
+            <Route path="/collector/intake/lots/:lotId" element={<LotDetailPage />} />
             <Route path="/collector/assignments" element={<CollectorAssignmentsPage />} />
             <Route path="/collector/assignments/:assignmentId" element={<CollectorAssignmentDetailPage />} />
             <Route path="/collector/profile" element={<CollectorProfilePage />} />

@@ -156,12 +156,15 @@ export class AuthService {
 
   async getProfile(userId: string) {
     if (this.accounts.has(userId)) {
-      return this.accounts.get(userId);
+      const localProfile = this.accounts.get(userId)!;
+      const activatedProfile = await this.activateCollectorForSelfServiceIntake(localProfile);
+      this.accounts.set(userId, activatedProfile);
+      return activatedProfile;
     }
 
     if (this.supabaseService.isConfigured()) {
       const dbProfile = await this.supabaseService.getUserProfile(userId);
-      if (dbProfile) return dbProfile;
+      if (dbProfile) return this.activateCollectorForSelfServiceIntake(dbProfile);
     }
 
     // Default fallback
@@ -248,7 +251,8 @@ export class AuthService {
 
     const newId = `usr-${Date.now()}`;
     const isCitizen = dto.role === 'USER';
-    const status = isCitizen ? 'ACTIVE' : 'PENDING';
+    const isCollector = dto.role === 'COLLECTION_COLLECTOR';
+    const status = isCitizen || isCollector ? 'ACTIVE' : 'PENDING';
 
     const newRecord: UserProfileRecord = {
       id: newId,
@@ -262,7 +266,7 @@ export class AuthService {
       business_name: dto.business_name,
       vehicle_type: dto.vehicle_type,
       cpcb_authorization_number: dto.cpcb_authorization_number,
-      is_verified: isCitizen,
+      is_verified: isCitizen || isCollector,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -280,8 +284,8 @@ export class AuthService {
 
     return {
       success: true,
-      message: isCitizen
-        ? 'Citizen registration completed successfully.'
+      message: isCitizen || isCollector
+        ? `${isCollector ? 'Collector' : 'Citizen'} registration completed successfully.`
         : `Registration submitted for '${dto.role}'. Account status is 'PENDING' awaiting regulatory verification.`,
       profile: newRecord,
       account_status: status,
@@ -332,10 +336,48 @@ export class AuthService {
       profile = await this.supabaseService.getUserProfile(data.user.id);
     }
     if (!profile) throw new UnauthorizedException('Authenticated account profile was not found.');
+    profile = await this.activateCollectorForSelfServiceIntake(profile);
     if (profile.role !== selectedRole) {
       throw new ForbiddenException(`This account is registered as ${profile.role}. Please select the correct login role.`);
     }
     return { session: data.session, profile };
+  }
+
+  /**
+   * Field collectors can create and manage intake lots directly. This keeps the
+   * voice-first collector flow usable immediately after registration while the
+   * separate aggregator/recycler approval process stays intact.
+   */
+  private async activateCollectorForSelfServiceIntake(profile: any) {
+    if (profile?.role !== 'COLLECTION_COLLECTOR' || profile.account_status === 'ACTIVE') {
+      return profile;
+    }
+
+    if (!this.supabaseService.isConfigured()) {
+      return { ...profile, account_status: 'ACTIVE', is_active: true, is_verified: true };
+    }
+
+    const { data, error } = await this.supabaseService.getAdminClient()
+      .from('profiles')
+      .update({ account_status: 'ACTIVE', is_active: true, is_verified: true })
+      .eq('id', profile.id)
+      .select()
+      .single();
+    if (error) {
+      this.logger.warn(`Collector auto-activation failed for ${profile.id}: ${error.message}`);
+      return profile;
+    }
+
+    await this.auditService.logEvent({
+      actor_id: profile.id,
+      actor_role: 'COLLECTION_COLLECTOR',
+      action: 'COLLECTOR_SELF_SERVICE_INTAKE_ACTIVATED',
+      entity_type: 'profiles',
+      entity_id: profile.id,
+      old_data: { account_status: profile.account_status },
+      new_data: { account_status: 'ACTIVE' },
+    });
+    return { ...profile, ...data, account_status: 'ACTIVE', is_active: true, is_verified: true };
   }
 
   async getPendingAccounts() {

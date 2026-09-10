@@ -1,945 +1,130 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  ArrowRight, Building2, Check, ChevronDown, Factory, Globe2, HelpCircle,
+  Landmark, Leaf, Mic, Phone, Radio, ShieldCheck, Speaker,
+  Volume2, WifiOff, X,
+} from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { UserRole } from '../types';
-import { checkBackendHealth } from '../services/api';
-import {
-  Recycle,
-  UserCheck,
-  Building2,
-  Truck,
-  Factory,
-  Landmark,
-  ShieldCheck,
-  ArrowRight,
-  Activity,
-  Languages,
-  LogOut,
-  Zap,
-  ChevronRight,
-  X,
-  FileCheck,
-  Cpu,
-  MapPin,
-  CheckCircle2,
-  AlertTriangle
-} from 'lucide-react';
+import { apiClient } from '../services/api';
 import i18n from '../i18n/i18n';
 
-interface RoleOption {
-  role: UserRole;
-  badge: string;
-  badgeColor: string;
-  title: string;
-  tamilTitle: string;
-  tagline: string;
-  description: string;
-  icon: React.ReactNode;
-  route: string;
-  highlights: string[];
-}
+type Language = 'en' | 'hi' | 'mr';
+type VoiceState = 'idle' | 'listening' | 'processing' | 'success' | 'error' | 'offline';
+
+const copy = {
+  en: {
+    service: 'E-Waste Collection', speak: 'Tell us by speaking', question: 'What would you like to do?',
+    tap: 'Tap to speak', listening: 'Listening…', understanding: 'Understanding…', gotIt: 'Got it',
+    retry: 'Please try again', offline: 'You are offline', welcome: 'Sell your e-waste and recycle it safely.',
+    citizen: 'Continue as User', citizenNote: 'I want to recycle my e-waste', collector: 'Informal Collector',
+    collectorNote: 'Scrap collector / kabadiwala', recycler: 'Formal Recycler', recyclerNote: 'Authorized recycling centre',
+    admin: 'Government Admin', adminNote: 'Government monitoring', voiceHelp: 'Voice Help', helpline: 'Helpline',
+    safety: 'Safety', help: 'Help', confirm: 'Continue as', yes: 'Yes', no: 'No', detected: 'We heard',
+    safetyTitle: 'Keep e-waste safe', safetyText: 'Do not break batteries, screens or devices. Keep damaged batteries away from heat and water.',
+    helpTitle: 'How can we help?', helpText: 'Choose a language, tap the microphone, say what you need, then confirm your role.',
+    helplineTitle: 'Need support?', helplineText: 'Use Voice Help for spoken guidance or contact your local authorised e-waste collection centre.',
+    welcomeVoice: 'Welcome to the E-Waste Management Platform. Choose your language. If reading is difficult, tap the microphone and speak. You can recycle e-waste, work as a collector, join as a recycler, or access government administration.',
+  },
+  hi: {
+    service: 'ई-वेस्ट संग्रह सेवा', speak: 'बोलकर बताएं', question: 'आप क्या करना चाहते हैं?', tap: 'बोलने के लिए दबाएं',
+    listening: 'सुन रहे हैं…', understanding: 'समझ रहे हैं…', gotIt: 'समझ गया', retry: 'कृपया फिर कोशिश करें',
+    offline: 'आप ऑफ़लाइन हैं', welcome: 'ई-वेस्ट बेचें, सुरक्षित तरीके से रीसायकल करें।', citizen: 'उपयोगकर्ता के रूप में जारी रखें',
+    citizenNote: 'मैं अपना ई-वेस्ट रीसायकल करना चाहता हूँ', collector: 'अनौपचारिक कलेक्टर', collectorNote: 'स्क्रैप कलेक्टर / कबाड़ी',
+    recycler: 'अधिकृत रीसायकलर', recyclerNote: 'अधिकृत रीसायकल केंद्र', admin: 'सरकारी प्रशासन', adminNote: 'सरकारी निगरानी',
+    voiceHelp: 'आवाज़ सहायता', helpline: 'हेल्पलाइन', safety: 'सुरक्षा', help: 'मदद', confirm: 'आगे बढ़ें:', yes: 'हाँ', no: 'नहीं',
+    detected: 'हमने सुना', safetyTitle: 'ई-वेस्ट को सुरक्षित रखें', safetyText: 'बैटरी, स्क्रीन या उपकरण न तोड़ें। खराब बैटरियों को गर्मी और पानी से दूर रखें।',
+    helpTitle: 'हम कैसे मदद करें?', helpText: 'भाषा चुनें, माइक्रोफोन दबाएं, अपनी ज़रूरत बोलें और भूमिका की पुष्टि करें।',
+    helplineTitle: 'सहायता चाहिए?', helplineText: 'बोली हुई मदद के लिए आवाज़ सहायता दबाएं या अपने नज़दीकी अधिकृत ई-वेस्ट संग्रह केंद्र से संपर्क करें।',
+    welcomeVoice: 'नमस्ते। ई-वेस्ट मैनेजमेंट प्लेटफॉर्म में आपका स्वागत है। अपनी भाषा चुनें। अगर पढ़ने में परेशानी है, तो माइक्रोफोन दबाकर बोलें। आप ई-वेस्ट जमा कर सकते हैं, कलेक्टर के रूप में काम कर सकते हैं, रीसायकलर बन सकते हैं या सरकारी प्रशासन में लॉगिन कर सकते हैं।',
+  },
+  mr: {
+    service: 'ई-वेस्ट संकलन सेवा', speak: 'बोलून सांगा', question: 'तुम्हाला काय करायचे आहे?', tap: 'बोलण्यासाठी दाबा',
+    listening: 'ऐकत आहोत…', understanding: 'समजून घेत आहोत…', gotIt: 'समजले', retry: 'कृपया पुन्हा प्रयत्न करा',
+    offline: 'तुम्ही ऑफलाइन आहात', welcome: 'तुमचा ई-वेस्ट सुरक्षितपणे रीसायकल करा.', citizen: 'वापरकर्ता म्हणून पुढे जा',
+    citizenNote: 'मला माझा ई-वेस्ट रीसायकल करायचा आहे', collector: 'अनौपचारिक संकलक', collectorNote: 'स्क्रॅप संकलक / कबाडीवाला',
+    recycler: 'अधिकृत रीसायकलर', recyclerNote: 'अधिकृत रीसायकल केंद्र', admin: 'सरकारी प्रशासन', adminNote: 'सरकारी देखरेख',
+    voiceHelp: 'आवाज मदत', helpline: 'हेल्पलाइन', safety: 'सुरक्षा', help: 'मदत', confirm: 'पुढे जा:', yes: 'होय', no: 'नाही',
+    detected: 'आम्ही ऐकले', safetyTitle: 'ई-वेस्ट सुरक्षित ठेवा', safetyText: 'बॅटरी, स्क्रीन किंवा उपकरणे तोडू नका. खराब बॅटरी उष्णता आणि पाण्यापासून दूर ठेवा।',
+    helpTitle: 'आम्ही कशी मदत करू?', helpText: 'भाषा निवडा, मायक्रोफोन दाबा, तुमची गरज सांगा आणि भूमिका निश्चित करा.',
+    helplineTitle: 'मदत हवी आहे?', helplineText: 'बोलून मार्गदर्शनासाठी आवाज मदत दाबा किंवा जवळच्या अधिकृत ई-वेस्ट संकलन केंद्राशी संपर्क करा.',
+    welcomeVoice: 'ई-वेस्ट मॅनेजमेंट प्लॅटफॉर्ममध्ये आपले स्वागत आहे. आपली भाषा निवडा. वाचण्यात अडचण असल्यास मायक्रोफोन दाबून बोला.',
+  },
+} as const;
+
+const speechLocale: Record<Language, string> = { en: 'en-IN', hi: 'hi-IN', mr: 'mr-IN' };
+const roleLabels: Record<UserRole, keyof typeof copy.en> = { USER: 'citizen', INFORMAL_AGGREGATOR: 'collector', COLLECTION_COLLECTOR: 'collector', AUTHORIZED_RECYCLER: 'recycler', GOVERNMENT_ADMIN: 'admin' };
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout, language, setLanguage } = useAuthStore();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [healthStatus, setHealthStatus] = useState<string>('Checking...');
-  const [isHealthy, setIsHealthy] = useState<boolean>(false);
+  const { language, setLanguage } = useAuthStore();
+  const lang: Language = language === 'hi' || language === 'mr' ? language : 'en';
+  const t = copy[lang];
+  const recognition = useRef<any>(null);
+  const [voiceState, setVoiceState] = useState<VoiceState>('idle');
+  const [transcript, setTranscript] = useState('');
+  const [choice, setChoice] = useState<UserRole | null>(null);
+  const [dialog, setDialog] = useState<'safety' | 'help' | 'helpline' | null>(null);
+  const [languageOpen, setLanguageOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchHealth = async () => {
-      const data = await checkBackendHealth();
-      if (data.status === 'ok') {
-        setIsHealthy(true);
-        const aiStatus = data.services?.ai_service?.status === 'UP' ? 'AI Microservice UP' : 'AI Standby';
-        setHealthStatus(`Gateway Active • ${aiStatus}`);
-      } else {
-        setIsHealthy(false);
-        setHealthStatus('System Standby (Demo Ready)');
-      }
+  useEffect(() => () => recognition.current?.abort?.(), []);
+  const speak = (message: string) => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(message);
+    utterance.lang = speechLocale[lang];
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  };
+  const setAppLanguage = (next: Language) => { setLanguage(next); i18n.changeLanguage(next); setLanguageOpen(false); };
+  const selectRole = (role: UserRole) => { setChoice(role); speak(`${t.confirm} ${t[roleLabels[role]]}?`); };
+  const continueRole = () => navigate('/login', { state: { selectedRole: choice } });
+
+  const beginListening = () => {
+    if (!navigator.onLine) { setVoiceState('offline'); return; }
+    const Recognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!Recognition) { setVoiceState('error'); return; }
+    const instance = new Recognition();
+    recognition.current = instance;
+    instance.lang = speechLocale[lang]; instance.interimResults = false; instance.maxAlternatives = 1;
+    instance.onstart = () => setVoiceState('listening');
+    instance.onerror = () => setVoiceState('error');
+    instance.onend = () => setVoiceState((current: VoiceState) => current === 'listening' ? 'idle' : current);
+    instance.onresult = async (event: any) => {
+      const text = event.results[0][0].transcript as string;
+      setTranscript(text); setVoiceState('processing');
+      try {
+        const response: any = await apiClient.post('/ai/voice-intent', { transcript: text, language: lang });
+        const intent = response?.data || response;
+        const role = intent?.role as UserRole | undefined;
+        setVoiceState('success');
+        if (role) selectRole(role); else speak(t.helpText);
+      } catch { setVoiceState('error'); }
     };
-    fetchHealth();
-    const interval = setInterval(fetchHealth, 15000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleLanguageChange = (lang: string) => {
-    setLanguage(lang);
-    i18n.changeLanguage(lang);
+    instance.start();
   };
 
-  const handleRoleSelect = (role: UserRole, targetRoute: string) => {
-    setIsModalOpen(false);
-    navigate('/login', { state: { selectedRole: role, targetRoute } });
-  };
-
-  const getDashboardRouteForUser = (role?: UserRole) => {
-    switch (role) {
-      case 'INFORMAL_AGGREGATOR': return '/aggregator/dashboard';
-      case 'COLLECTION_COLLECTOR': return '/collector/dashboard';
-      case 'AUTHORIZED_RECYCLER': return '/recycler/dashboard';
-      case 'GOVERNMENT_ADMIN': return '/admin/dashboard';
-      default: return '/user/dashboard';
-    }
-  };
-
-  const rolesList: RoleOption[] = [
-    {
-      role: 'USER',
-      badge: 'Tier 1 • Citizen / Consumer',
-      badgeColor: '#10b981',
-      title: 'Citizen & Bulk Consumer',
-      tamilTitle: 'பொதுமக்கள் & நுகர்வோர்',
-      tagline: 'Sell & Dispose E-Waste with AI Valuation',
-      description: 'Upload scrap photos for instant AI valuation, schedule verified door-step pickup, and earn green disposal certificates.',
-      icon: <UserCheck size={26} color="#10b981" />,
-      route: '/user/dashboard',
-      highlights: ['AI Photo Scrap Appraisal', 'Doorstep Pickup Tracking', 'CPCB Safe Disposal Certificate']
-    },
-    {
-      role: 'INFORMAL_AGGREGATOR',
-      badge: 'Tier 2 • Scrap Hub',
-      badgeColor: '#f59e0b',
-      title: 'Informal Scrap Aggregator',
-      tamilTitle: 'ஸ்க்ராப் சேகரிப்பாளர் / கிடங்கு',
-      tagline: 'Consolidate Godown Lots & Boost Margins',
-      description: 'Formalize your scrap business, aggregate materials into high-purity recycler lots, and earn 15–25% higher market rates from formal recyclers.',
-      icon: <Building2 size={26} color="#f59e0b" />,
-      route: '/aggregator/dashboard',
-      highlights: ['Lot Aggregation Pipeline', '15–25% Margin Premium', 'Direct Recycler Bidding']
-    },
-    {
-      role: 'COLLECTION_COLLECTOR',
-      badge: 'Tier 3 • Logistics & Field',
-      badgeColor: '#06b6d4',
-      title: 'Field Collector & Kabadiwala',
-      tamilTitle: 'கள முகவர் / கபடிவாலா',
-      tagline: 'Smart Dispatch, Scale Verification & Payout',
-      description: 'Accept real-time pickup requests on your mobile app, calibrate scales with QR verification, geotag scrap weights, and receive instant digital payouts.',
-      icon: <Truck size={26} color="#06b6d4" />,
-      route: '/collector/dashboard',
-      highlights: ['PostGIS Smart Routing', 'Digital Scale Geotagging', 'Instant UPI Payout Proof']
-    },
-    {
-      role: 'AUTHORIZED_RECYCLER',
-      badge: 'Tier 4 • Industry',
-      badgeColor: '#8b5cf6',
-      title: 'CPCB Authorized Recycler',
-      tamilTitle: 'அங்கீகரிக்கப்பட்ட மறுசுழற்சியாளர்',
-      tagline: 'Form 6 Manifests & EPR Credit Engine',
-      description: 'Source pre-sorted high-purity e-waste lots, maintain CPCB Form 6 digital chain-of-custody manifests, and generate auditable EPR certificates.',
-      icon: <Factory size={26} color="#8b5cf6" />,
-      route: '/recycler/dashboard',
-      highlights: ['Form 6 Manifest Generator', 'EPR Credit Trading', 'Non-Repudiation Custody Trail']
-    },
-    {
-      role: 'GOVERNMENT_ADMIN',
-      badge: 'Tier 5 • Regulatory',
-      badgeColor: '#f43f5e',
-      title: 'CPCB / SPCB Regulatory Admin',
-      tamilTitle: 'அரசு / CPCB கண்காணிப்பாளர்',
-      tagline: 'National Circular Command Center',
-      description: 'Monitor nationwide e-waste flows, track compliance with E-Waste Rules 2022, inspect real-time anomaly alerts, and audit hazardous extractions.',
-      icon: <Landmark size={26} color="#f43f5e" />,
-      route: '/admin/dashboard',
-      highlights: ['National Circular Telemetry', 'AI Anomaly Detection', 'Audit-Ready Regulatory Ledger']
-    }
+  const statusText = useMemo(() => ({ idle: t.tap, listening: t.listening, processing: t.understanding, success: t.gotIt, error: t.retry, offline: t.offline })[voiceState], [voiceState, t]);
+  const cardData = [
+    { role: 'COLLECTION_COLLECTOR' as UserRole, icon: <Leaf />, title: t.collector, note: t.collectorNote, tone: '#176b44', featured: true },
+    { role: 'AUTHORIZED_RECYCLER' as UserRole, icon: <Factory />, title: t.recycler, note: t.recyclerNote, tone: '#e8f5f1' },
+    { role: 'GOVERNMENT_ADMIN' as UserRole, icon: <Landmark />, title: t.admin, note: t.adminNote, tone: '#f1f5ed' },
   ];
 
-  return (
-    <div className="landing-page light-theme" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#0f172a', color: '#f8fafc' }}>
-      {/* ------------------------------------------------------------- */}
-      {/* 1. TOP NAVIGATION BAR                                         */}
-      {/* ------------------------------------------------------------- */}
-      <nav
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 40,
-          background: 'rgba(15, 23, 42, 0.92)',
-          backdropFilter: 'blur(16px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          padding: '14px 24px',
-        }}
-      >
-        <div style={{ maxWidth: 1300, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-          {/* Platform Identity */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
-              }}
-            >
-              <Recycle size={22} color="#ffffff" />
-            </div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>ECOBRIDGES</span>
-                <span
-                  style={{
-                    background: 'rgba(16, 185, 129, 0.2)',
-                    color: '#34d399',
-                    fontSize: '0.68rem',
-                    fontWeight: 800,
-                    padding: '2px 8px',
-                    borderRadius: 20,
-                    border: '1px solid rgba(16, 185, 129, 0.4)',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  DPI PLATFORM
-                </span>
-              </div>
-              <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                CPCB E-Waste (Management) Rules 2022 Formalization Hub
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Nav & Action */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            {/* System Connection Pill */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                background: isHealthy ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                padding: '5px 12px',
-                borderRadius: 20,
-                border: `1px solid ${isHealthy ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
-                fontSize: '0.75rem',
-                color: isHealthy ? '#34d399' : '#fbbf24',
-              }}
-            >
-              <Activity size={13} />
-              <span style={{ fontWeight: 600 }}>{healthStatus}</span>
-            </div>
-
-            {/* Language Switcher */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255, 255, 255, 0.06)', padding: '3px 8px', borderRadius: 8 }}>
-              <Languages size={14} color="#94a3b8" />
-              {['en', 'hi', 'mr'].map((lang) => (
-                <button
-                  key={lang}
-                  onClick={() => handleLanguageChange(lang)}
-                  style={{
-                    background: language === lang ? '#10b981' : 'transparent',
-                    color: language === lang ? '#ffffff' : '#94a3b8',
-                    border: 'none',
-                    borderRadius: 4,
-                    padding: '2px 6px',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {lang}
-                </button>
-              ))}
-            </div>
-
-            {/* Login / Dashboard Button */}
-            {isAuthenticated && user ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <button
-                  onClick={() => navigate(getDashboardRouteForUser(user.role))}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    background: 'linear-gradient(135deg, #10b981, #059669)',
-                    color: '#ffffff',
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: 8,
-                    fontWeight: 700,
-                    fontSize: '0.85rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <span>Go to {user.role.replace('_', ' ')} Dashboard</span>
-                  <ArrowRight size={15} />
-                </button>
-                <button
-                  onClick={async () => {
-                    await logout();
-                  }}
-                  title="Sign out"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    color: '#94a3b8',
-                    padding: '8px',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  <LogOut size={16} />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setIsModalOpen(true)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  background: 'linear-gradient(135deg, #10b981, #059669)',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '9px 18px',
-                  borderRadius: 8,
-                  fontWeight: 700,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <span>Select Role to Login</span>
-                <ChevronRight size={16} />
-              </button>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      {/* ------------------------------------------------------------- */}
-      {/* 2. HERO SECTION                                               */}
-      {/* ------------------------------------------------------------- */}
-      <section
-        style={{
-          position: 'relative',
-          padding: '72px 24px 60px',
-          background: 'radial-gradient(circle at 50% 20%, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0) 70%)',
-          textAlign: 'center',
-        }}
-      >
-        <div style={{ maxWidth: 960, margin: '0 auto' }}>
-          {/* Government Compliance Pill */}
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '6px 16px',
-              borderRadius: 30,
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(16, 185, 129, 0.4)',
-              color: '#34d399',
-              fontSize: '0.82rem',
-              fontWeight: 600,
-              marginBottom: 24,
-            }}
-          >
-            <ShieldCheck size={16} />
-            <span>Digital Public Infrastructure for India's E-Waste (Management) Rules 2022</span>
-          </div>
-
-          <h1
-            style={{
-              fontSize: 'clamp(2.2rem, 5vw, 3.4rem)',
-              fontWeight: 900,
-              lineHeight: 1.15,
-              letterSpacing: '-0.03em',
-              marginBottom: 20,
-              background: 'linear-gradient(180deg, #ffffff 30%, #cbd5e1 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            National E-Waste Management & Formalization Platform
-          </h1>
-
-          <p
-            style={{
-              fontSize: 'clamp(1rem, 2vw, 1.2rem)',
-              color: '#94a3b8',
-              lineHeight: 1.6,
-              maxWidth: 760,
-              margin: '0 auto 36px',
-            }}
-          >
-            Empowering <strong>1.7M+ tonnes</strong> of Indian e-waste circularity by bridging Citizens, 
-            Informal Aggregators, Field Collectors, CPCB Licensed Recyclers, and Regulators with 
-            <strong> AI scrap appraisal, PostGIS routing, and CPCB Form 6 digital manifests</strong>.
-          </p>
-
-          {/* Primary Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, flexWrap: 'wrap' }}>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 10,
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                color: '#ffffff',
-                border: 'none',
-                padding: '14px 28px',
-                borderRadius: 10,
-                fontSize: '1rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
-              onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
-            >
-              <Zap size={18} />
-              <span>Select Your Role to Login (உள்நுழைக)</span>
-              <ArrowRight size={18} />
-            </button>
-
-            <a
-              href="#roles-section"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                background: 'rgba(255, 255, 255, 0.06)',
-                color: '#f8fafc',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                padding: '14px 24px',
-                borderRadius: 10,
-                fontSize: '0.95rem',
-                fontWeight: 600,
-                textDecoration: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <span>Explore Stakeholder Portals</span>
-            </a>
-          </div>
-
-          {/* Trust Highlights */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 24,
-              flexWrap: 'wrap',
-              marginTop: 40,
-              fontSize: '0.82rem',
-              color: '#64748b',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <CheckCircle2 size={16} color="#10b981" />
-              <span>CPCB Form 6 Certified</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <CheckCircle2 size={16} color="#06b6d4" />
-              <span>AI Scrap Valuation</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <CheckCircle2 size={16} color="#f59e0b" />
-              <span>15–25% Informal Margin Boost</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <CheckCircle2 size={16} color="#8b5cf6" />
-              <span>EPR Credit Generation</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------- */}
-      {/* 3. NATIONAL IMPACT METRICS                                    */}
-      {/* ------------------------------------------------------------- */}
-      <section style={{ padding: '24px 24px 60px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: 16,
-          }}
-        >
-          <div
-            style={{
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: 14,
-              padding: '24px',
-              textAlign: 'center',
-            }}
-          >
-            <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#34d399', letterSpacing: '-0.03em' }}>1.71M+</div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#f8fafc', marginTop: 4 }}>Tonnes Annual E-Waste</div>
-            <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 4 }}>India's current e-waste generation managed under CPCB targets</div>
-          </div>
-
-          <div
-            style={{
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: 14,
-              padding: '24px',
-              textAlign: 'center',
-            }}
-          >
-            <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#38bdf8', letterSpacing: '-0.03em' }}>90%+</div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#f8fafc', marginTop: 4 }}>Informal Formalization</div>
-            <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 4 }}>Kabadiwalas & godowns bridged into formal legal recycling streams</div>
-          </div>
-
-          <div
-            style={{
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: 14,
-              padding: '24px',
-              textAlign: 'center',
-            }}
-          >
-            <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#fbbf24', letterSpacing: '-0.03em' }}>+22.4%</div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#f8fafc', marginTop: 4 }}>Aggregator Net Profit Margin</div>
-            <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 4 }}>Higher recovery value via direct CPCB formal recycler bulk bidding</div>
-          </div>
-
-          <div
-            style={{
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: 14,
-              padding: '24px',
-              textAlign: 'center',
-            }}
-          >
-            <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#c084fc', letterSpacing: '-0.03em' }}>100%</div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#f8fafc', marginTop: 4 }}>Form 6 Chain of Custody</div>
-            <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 4 }}>Digital manifests with immutable non-repudiation audit trails</div>
-          </div>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------- */}
-      {/* 4. CHOOSE YOUR ROLE / 5 ECOSYSTEM PILLARS                     */}
-      {/* ------------------------------------------------------------- */}
-      <section
-        id="roles-section"
-        style={{
-          padding: '60px 24px 80px',
-          background: 'rgba(255, 255, 255, 0.015)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-        }}
-      >
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <div
-              style={{
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                color: '#10b981',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                marginBottom: 8,
-              }}
-            >
-              Interactive Role Portals (யாருக்கு என்ன வசதி?)
-            </div>
-            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
-              Who Are You In The Circular Ecosystem?
-            </h2>
-            <p style={{ fontSize: '0.95rem', color: '#94a3b8', marginTop: 8 }}>
-              Click any role card below to log in directly into that specific role dashboard.
-            </p>
-          </div>
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: 20,
-            }}
-          >
-            {rolesList.map((item) => (
-              <div
-                key={item.role}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: 16,
-                  padding: '24px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  transition: 'transform 0.2s, border-color 0.2s, box-shadow 0.2s',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.borderColor = item.badgeColor;
-                  e.currentTarget.style.boxShadow = `0 12px 28px rgba(0, 0, 0, 0.4)`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-                onClick={() => handleRoleSelect(item.role, item.route)}
-              >
-                <div>
-                  {/* Top Badge & Icon */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                    <span
-                      style={{
-                        background: `${item.badgeColor}22`,
-                        color: item.badgeColor,
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        padding: '4px 10px',
-                        borderRadius: 20,
-                        border: `1px solid ${item.badgeColor}44`,
-                        letterSpacing: '0.04em',
-                      }}
-                    >
-                      {item.badge}
-                    </span>
-                    <div
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 12,
-                        background: `${item.badgeColor}15`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: `1px solid ${item.badgeColor}33`,
-                      }}
-                    >
-                      {item.icon}
-                    </div>
-                  </div>
-
-                  {/* Title & Subtitle */}
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginBottom: 2 }}>
-                    {item.title}
-                  </h3>
-                  <div style={{ fontSize: '0.8rem', color: item.badgeColor, fontWeight: 600, marginBottom: 10 }}>
-                    {item.tamilTitle}
-                  </div>
-                  <p style={{ fontSize: '0.86rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: 16 }}>
-                    {item.description}
-                  </p>
-
-                  {/* Highlights */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
-                    {item.highlights.map((h, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', color: '#cbd5e1' }}>
-                        <CheckCircle2 size={13} color={item.badgeColor} />
-                        <span>{h}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Direct Login CTA */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRoleSelect(item.role, item.route);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: 10,
-                    border: `1px solid ${item.badgeColor}66`,
-                    background: `${item.badgeColor}18`,
-                    color: '#ffffff',
-                    fontWeight: 700,
-                    fontSize: '0.88rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = item.badgeColor;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = `${item.badgeColor}18`;
-                  }}
-                >
-                  <span>Login as {item.title.split(' ')[0]}</span>
-                  <ArrowRight size={15} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------- */}
-      {/* 5. CORE DPI INNOVATIONS                                       */}
-      {/* ------------------------------------------------------------- */}
-      <section style={{ padding: '72px 24px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
-        <div style={{ textAlign: 'center', marginBottom: 44 }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-            Technology & DPI Pillars
-          </div>
-          <h2 style={{ fontSize: '2rem', fontWeight: 800, marginTop: 4 }}>
-            Engineered for India's Unique E-Waste Realities
-          </h2>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
-          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 14, padding: '24px' }}>
-            <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-              <Cpu size={22} color="#34d399" />
-            </div>
-            <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 8 }}>AI Vision & Scrap Valuation</h4>
-            <p style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: 1.5 }}>
-              YOLOv8 deep learning model classifies discarded components, predicts precious metal yields, and computes transparent market pricing.
-            </p>
-          </div>
-
-          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 14, padding: '24px' }}>
-            <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(6, 182, 212, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-              <MapPin size={22} color="#38bdf8" />
-            </div>
-            <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 8 }}>PostGIS Geotagged Logistics</h4>
-            <p style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: 1.5 }}>
-              Spatial clustering and dispatch optimization connect kabadiwala runners to pickups with calibrated scale weight GPS verification.
-            </p>
-          </div>
-
-          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 14, padding: '24px' }}>
-            <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-              <AlertTriangle size={22} color="#fbbf24" />
-            </div>
-            <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 8 }}>Vernacular OHS Safety</h4>
-            <p style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: 1.5 }}>
-              Audio & pictorial warnings in English, Hindi, and Marathi prevent dangerous handling of CRTs, lithium-ion cells, and toxic acid leaching.
-            </p>
-          </div>
-
-          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 14, padding: '24px' }}>
-            <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(168, 85, 247, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-              <FileCheck size={22} color="#c084fc" />
-            </div>
-            <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 8 }}>Form 6 & Auditable EPR</h4>
-            <p style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: 1.5 }}>
-              Digital double-entry custody manifests fulfill CPCB E-Waste Rules 2022 legal mandates, generating verified Extended Producer Responsibility credits.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------- */}
-      {/* 6. FOOTER                                                     */}
-      {/* ------------------------------------------------------------- */}
-      <footer
-        style={{
-          marginTop: 'auto',
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-          padding: '24px',
-          background: 'rgba(15, 23, 42, 0.95)',
-          textAlign: 'center',
-          fontSize: '0.82rem',
-          color: '#64748b',
-        }}
-      >
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8' }}>
-            <ShieldCheck size={16} color="#10b981" />
-            <span>National E-Waste Management Platform • Built in Compliance with CPCB E-Waste (Management) Rules 2022</span>
-          </div>
-          <div>
-            Citizen • Informal Aggregator • Field Collector • Authorized Recycler • Government Regulatory Admin
-          </div>
-        </div>
-      </footer>
-
-      {/* ------------------------------------------------------------- */}
-      {/* 7. INTERACTIVE ROLE SELECTION LOGIN MODAL                     */}
-      {/* ------------------------------------------------------------- */}
-      {isModalOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 100,
-            background: 'rgba(15, 23, 42, 0.32)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-          }}
-          onClick={() => setIsModalOpen(false)}
-        >
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: 20,
-              maxWidth: 740,
-              width: '100%',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              padding: '28px',
-              boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.28)',
-              position: 'relative',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#10b981', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>
-                  <Zap size={16} />
-                  <span>Select Role to Login (உள்நுழைய வேண்டிய பங்கைத் தேர்வுசெய்க)</span>
-                </div>
-                <h3 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a', marginTop: 4 }}>
-                  Who Are You Logging In As?
-                </h3>
-                <p style={{ fontSize: '0.84rem', color: '#64748b', marginTop: 2 }}>
-                  Click your target role below to instantly authenticate and enter your specific dashboard:
-                </p>
-              </div>
-
-              <button
-                onClick={() => setIsModalOpen(false)}
-                style={{
-                  background: '#f1f5f9',
-                  border: '1px solid #e2e8f0',
-                  color: '#64748b',
-                  borderRadius: 8,
-                  padding: '6px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Role Cards in Modal */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {rolesList.map((item) => (
-                <div
-                  key={item.role}
-                  onClick={() => handleRoleSelect(item.role, item.route)}
-                  style={{
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 12,
-                    padding: '14px 18px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 16,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = `${item.badgeColor}15`;
-                    e.currentTarget.style.borderColor = item.badgeColor;
-                    e.currentTarget.style.transform = 'translateX(4px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#ffffff';
-                    e.currentTarget.style.borderColor = '#e2e8f0';
-                    e.currentTarget.style.transform = 'translateX(0)';
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <div
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 10,
-                        background: `${item.badgeColor}22`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {item.icon}
-                    </div>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a' }}>
-                          {item.title}
-                        </span>
-                        <span style={{ fontSize: '0.72rem', color: item.badgeColor, fontWeight: 700 }}>
-                          ({item.tamilTitle})
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 2 }}>
-                        {item.tagline}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                    <span
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        padding: '6px 12px',
-                        borderRadius: 8,
-                        background: item.badgeColor,
-                        color: '#ffffff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4,
-                      }}
-                    >
-                      Login <ArrowRight size={13} />
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Alternative Form Login Link */}
-            <div
-              style={{
-                marginTop: 20,
-                paddingTop: 16,
-                borderTop: '1px solid #e2e8f0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                fontSize: '0.82rem',
-                color: '#64748b',
-              }}
-            >
-              <span>Want to enter phone number / OTP or email password?</span>
-              <Link
-                to="/login"
-                onClick={() => setIsModalOpen(false)}
-                style={{ color: '#10b981', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}
-              >
-                <span>Classic Login Screen</span>
-                <ChevronRight size={14} />
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
+  return <main className="intro-page">
+    <style>{`
+      .intro-page{min-height:100vh;background:#fcfdf9;color:#173b2a;font-family:var(--font-sans);padding:14px 14px 30px}.intro-shell{max-width:480px;margin:auto}.intro-header{display:flex;align-items:center;justify-content:space-between;gap:10px}.brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px}.brand-mark{width:42px;height:42px;border-radius:14px;background:#176b44;color:white;display:grid;place-items:center;box-shadow:0 7px 16px #176b4430}.lang-select{position:relative}.lang-trigger,.help-item,.role-card,.citizen-card{font:inherit;cursor:pointer}.lang-trigger{min-height:42px;border:1px solid #d6e5d9;border-radius:12px;background:white;color:#1f5137;padding:0 9px;display:flex;align-items:center;gap:5px;font-weight:700}.lang-menu{position:absolute;right:0;top:48px;z-index:3;width:145px;background:#fff;border:1px solid #dbe7dd;border-radius:13px;padding:5px;box-shadow:0 12px 25px #173b2a22}.lang-menu button{display:block;width:100%;text-align:left;border:0;border-radius:9px;background:transparent;padding:10px;color:#173b2a;font:inherit;cursor:pointer}.voice-section{text-align:center;padding:25px 6px 19px}.intro-title{font-size:25px;margin:15px 0 3px;letter-spacing:-.6px}.voice-orb{width:128px;height:128px;border-radius:50%;border:0;background:#197044;color:white;display:grid;place-items:center;margin:22px auto 15px;cursor:pointer;box-shadow:0 0 0 10px #dff1e3,0 0 0 20px #eff9f0;position:relative}.voice-orb:focus-visible,.role-card:focus-visible,.citizen-card:focus-visible,.help-item:focus-visible,.lang-trigger:focus-visible{outline:3px solid #f4ad38;outline-offset:3px}.voice-orb.listening{animation:pulse 1.4s infinite}.voice-orb.processing svg{animation:spin 1.3s linear infinite}.voice-status{margin:0;font-weight:800;font-size:18px}.voice-sub{margin:5px auto 13px;color:#577262;font-size:15px;min-height:21px}.welcome{display:flex;gap:8px;align-items:center;justify-content:center;margin:auto;color:#3f604e;font-size:15px;line-height:1.4}.welcome button{border:0;background:#e8f6eb;color:#176b44;border-radius:50%;width:34px;height:34px;display:grid;place-items:center;cursor:pointer;flex:none}.cards{display:grid;gap:12px}.role-card,.citizen-card{width:100%;min-height:90px;border:1px solid #d8e7d9;border-radius:21px;padding:15px;display:flex;align-items:center;gap:13px;text-align:left;box-shadow:0 5px 15px #173b2a0a;transition:transform .18s,box-shadow .18s}.role-card:hover,.citizen-card:hover{transform:translateY(-2px);box-shadow:0 9px 20px #173b2a16}.citizen-card{background:#176b44;color:#fff;border-color:#176b44}.role-icon{width:50px;height:50px;border-radius:16px;background:#fff;color:#176b44;display:grid;place-items:center;flex:none}.role-copy{flex:1}.role-title{font-weight:800;font-size:17px;display:block}.role-note{font-size:13px;opacity:.78;display:block;margin-top:4px;line-height:1.25}.role-voice{padding:9px;color:#176b44;border:0;background:transparent;cursor:pointer}.citizen-card .role-voice{color:white}.quick-help{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:20px}.help-item{min-height:68px;border:1px solid #dce9de;background:#fff;border-radius:15px;color:#276146;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;font-size:11px;font-weight:800}.dialog-backdrop{position:fixed;inset:0;background:#102d1d70;z-index:5;display:grid;place-items:end center;padding:16px}.dialog{width:min(100%,480px);background:#fff;border-radius:23px;padding:22px;box-shadow:0 15px 35px #0003}.dialog-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.dialog h2{margin:0;font-size:21px}.dialog p{color:#456150;line-height:1.55}.close{border:0;background:#edf6ef;border-radius:50%;width:36px;height:36px;display:grid;place-items:center;cursor:pointer}.confirm{position:fixed;z-index:4;bottom:16px;left:50%;transform:translateX(-50%);width:min(calc(100% - 28px),452px);background:#fff;border:1px solid #d7e8da;box-shadow:0 12px 30px #173b2a25;border-radius:19px;padding:14px;display:flex;gap:9px;align-items:center}.confirm-text{flex:1;font-weight:800}.confirm button{min-height:43px;border:0;border-radius:11px;padding:0 14px;font:inherit;font-weight:800;cursor:pointer}.confirm-no{background:#edf4ee;color:#24553a}.confirm-yes{background:#176b44;color:white}@keyframes pulse{0%,100%{box-shadow:0 0 0 10px #dff1e3,0 0 0 20px #eff9f0}50%{box-shadow:0 0 0 17px #dff1e3aa,0 0 0 31px #eff9f077}}@keyframes spin{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){.voice-orb.listening,.voice-orb.processing svg{animation:none}.role-card,.citizen-card{transition:none}}@media (min-width:700px){.intro-page{padding-top:28px}.intro-shell{padding:10px 0}.cards{grid-template-columns:1fr 1fr}.citizen-card{grid-column:span 2}}
+    `}</style>
+    <div className="intro-shell">
+      <header className="intro-header"><div className="brand"><span className="brand-mark"><RecycleIcon /></span><span>{t.service}</span></div><div className="lang-select"><button className="lang-trigger" onClick={() => setLanguageOpen(!languageOpen)} aria-expanded={languageOpen}><Globe2 size={17} />{{en:'English',hi:'हिंदी',mr:'मराठी'}[lang]}<ChevronDown size={15}/></button>{languageOpen && <div className="lang-menu">{(['en','hi','mr'] as Language[]).map(item => <button key={item} onClick={() => setAppLanguage(item)}>{item === 'en' ? '🇮🇳 English' : item === 'hi' ? '🇮🇳 हिंदी' : '🇮🇳 मराठी'}</button>)}</div>}</div></header>
+      <section className="voice-section"><h1 className="intro-title">{t.service}</h1><button className={`voice-orb ${voiceState}`} onClick={beginListening} aria-label={t.tap}>{voiceState === 'success' ? <Check size={52}/> : voiceState === 'offline' ? <WifiOff size={48}/> : voiceState === 'error' ? <HelpCircle size={48}/> : voiceState === 'processing' ? <Radio size={48}/> : <Mic size={53}/>}</button><h2 className="voice-status">{t.speak}</h2><p className="voice-sub">{voiceState === 'idle' ? t.question : statusText}</p>{transcript && <p className="voice-sub"><strong>{t.detected}:</strong> “{transcript}”</p>}<div className="welcome"><button onClick={() => speak(t.welcomeVoice)} aria-label={t.voiceHelp}><Volume2 size={18}/></button><span>{t.welcome}</span></div></section>
+      <section className="cards" aria-label="Choose how you want to continue">{cardData.map(card => <button className={card.featured ? 'citizen-card' : 'role-card'} style={card.featured ? undefined : { background: card.tone }} key={card.role} onClick={() => selectRole(card.role)}><span className="role-icon">{card.icon}</span><span className="role-copy"><span className="role-title">{card.title}</span><span className="role-note">{card.note}</span></span><span className="role-voice" role="button" aria-label={`${t.voiceHelp}: ${card.title}`} onClick={(event) => { event.stopPropagation(); speak(`${card.title}. ${card.note}`); }}><Speaker size={20}/></span><ArrowRight size={21}/></button>)}</section>
+      <section className="quick-help" aria-label="Quick help"><button className="help-item" onClick={() => speak(t.helpText)}><Volume2 size={20}/>{t.voiceHelp}</button><button className="help-item" onClick={() => setDialog('helpline')}><Phone size={20}/>{t.helpline}</button><button className="help-item" onClick={() => setDialog('safety')}><ShieldCheck size={20}/>{t.safety}</button><button className="help-item" onClick={() => setDialog('help')}><HelpCircle size={20}/>{t.help}</button></section>
     </div>
-  );
+    {choice && <div className="confirm" role="dialog" aria-modal="true"><span className="confirm-text">{t.confirm} {t[roleLabels[choice]]}?</span><button className="confirm-no" onClick={() => setChoice(null)}>{t.no}</button><button className="confirm-yes" onClick={continueRole}>{t.yes}</button></div>}
+    {dialog && <div className="dialog-backdrop" role="presentation" onClick={() => setDialog(null)}><section className="dialog" role="dialog" aria-modal="true" onClick={event => event.stopPropagation()}><div className="dialog-head"><h2>{dialog === 'safety' ? t.safetyTitle : dialog === 'help' ? t.helpTitle : t.helplineTitle}</h2><button className="close" onClick={() => setDialog(null)} aria-label="Close"><X size={18}/></button></div><p>{dialog === 'safety' ? t.safetyText : dialog === 'help' ? t.helpText : t.helplineText}</p><button className="confirm-yes" style={{ minHeight: 44, border: 0, borderRadius: 11, padding: '0 15px', fontWeight: 800 }} onClick={() => speak(dialog === 'safety' ? t.safetyText : dialog === 'help' ? t.helpText : t.helplineText)}>{t.voiceHelp}</button></section></div>}
+  </main>;
 };
+
+const RecycleIcon = () => <Leaf size={23} aria-hidden="true" />;

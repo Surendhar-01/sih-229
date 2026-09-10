@@ -13,10 +13,27 @@ from app.schemas.ai_schemas import (
     FinancialAnomalyDetectionRequest,
     FinancialAnomalyDetectionResponse,
     HealthResponse,
+    VoiceIntentRequest,
+    VoiceIntentResponse,
 )
 from app.services.mock_ai_service import MockAIService
 
 router = APIRouter()
+
+@router.post("/voice-intent", response_model=VoiceIntentResponse)
+def voice_intent(req: VoiceIntentRequest):
+    """Map a browser-transcribed voice request to a safe, confirmation-required role."""
+    text = req.transcript.strip().lower()
+    role_keywords = {
+        "INFORMAL_AGGREGATOR": ("collector", "kabadi", "scrap collector", "कलेक्टर", "कबाड़ी", "कबाडी", "संकलक"),
+        "AUTHORIZED_RECYCLER": ("recycler", "recycling centre", "recycling center", "रीसायकलर", "रिसायकलर"),
+        "GOVERNMENT_ADMIN": ("government", "admin", "cpcb", "सरकार", "प्रशासन", "सरकारी"),
+        "USER": ("recycle my", "old mobile", "e-waste", "ewaste", "पुराना मोबाइल", "ई-वेस्ट", "ईवेस्ट"),
+    }
+    for role, words in role_keywords.items():
+        if any(word in text for word in words):
+            return VoiceIntentResponse(transcript=req.transcript, intent="ROLE_SELECTION", role=role, confidence=0.88)
+    return VoiceIntentResponse(transcript=req.transcript, intent="UNKNOWN", role=None, confidence=0.2)
 
 @router.get("/health", response_model=HealthResponse)
 def health_check():

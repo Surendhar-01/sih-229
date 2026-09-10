@@ -5,10 +5,15 @@ import { useTranslation } from 'react-i18next';
 import { LotCard } from '../../components/lots/LotCard';
 import { lotsService, LotItem } from '../../services/lotsService';
 import { offlineStorage, LotDraft } from '../../utils/offlineStorage';
+import { useAuthStore } from '../../store/authStore';
 
 export const MyLotsPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const isCollectorIntake = user?.role === 'COLLECTION_COLLECTOR';
+  const createLotRoute = isCollectorIntake ? '/collector/intake' : '/user/lots/create';
+  const lotsListRoute = isCollectorIntake ? '/collector/intake/lots' : '/user/lots';
 
   const [lots, setLots] = useState<LotItem[]>([]);
   const [drafts, setDrafts] = useState<LotDraft[]>([]);
@@ -123,7 +128,7 @@ export const MyLotsPage: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => navigate('/user/lots/create')}
+          onClick={() => navigate(createLotRoute)}
           className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold shadow-lg shadow-emerald-600/20 transition self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
@@ -216,7 +221,7 @@ export const MyLotsPage: React.FC = () => {
           </div>
           <button
             type="button"
-            onClick={() => navigate('/user/lots/create')}
+          onClick={() => navigate(createLotRoute)}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold shadow-md transition"
           >
             <Plus className="w-4 h-4" />
@@ -229,7 +234,7 @@ export const MyLotsPage: React.FC = () => {
             <LotCard
               key={lot.id}
               lot={lot}
-              onView={(id) => navigate(`/user/lots/${id}`)}
+              onView={(id) => navigate(`${lotsListRoute}/${id}`)}
               onCancel={handleCancelLot}
             />
           ))}

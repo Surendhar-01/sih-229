@@ -5,6 +5,7 @@ import { apiClient } from '../../services/api';
 import { offlineStorage, OfflineOperation } from '../../lib/offlineStorage';
 import {
   Truck,
+  Camera,
   Package,
   Clock,
   CheckCircle2,
@@ -319,6 +320,29 @@ export const CollectorDashboard: React.FC = () => {
       {/* 2. PROMINENT ACTION BUTTONS (LOW-LITERACY FRIENDLY)           */}
       {/* ------------------------------------------------------------- */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12, marginBottom: 20 }}>
+        <Link
+          to="/collector/intake"
+          style={{
+            background: 'linear-gradient(135deg, #176b44, #0f5132)',
+            color: '#ffffff',
+            padding: '16px',
+            borderRadius: 14,
+            textDecoration: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            boxShadow: '0 4px 14px rgba(23, 107, 68, 0.25)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <Camera size={26} />
+            <span style={{ fontSize: '0.7rem', fontWeight: 800, background: '#ffffff', color: '#176b44', padding: '3px 8px', borderRadius: 12 }}>NEW</span>
+          </div>
+          <div>
+            <div style={{ fontSize: '1rem', fontWeight: 800 }}>Register E-Waste</div>
+            <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>Camera • Photos • AI Scan</div>
+          </div>
+        </Link>
         <Link
           to="/collector/assignments"
           style={{
