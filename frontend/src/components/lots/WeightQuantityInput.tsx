@@ -117,6 +117,72 @@ export const WeightQuantityInput: React.FC<WeightQuantityInputProps> = ({
           <span className="text-sm font-semibold text-slate-400 w-12">{unit}</span>
         </div>
 
+        {/* Visual Milestone Weight Selector (Mockup feature: 🪣 Bucket, 🧺 Basket, 🎒 Sack) */}
+        <div className="pt-2 pb-1 border-t border-slate-800">
+          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-1.5">
+            <span>Visual Weight Estimation (वज़न चुनें)</span>
+            <span className="text-emerald-400 font-mono font-bold">{weight ? `${weight} ${unit}` : '0 kg'}</span>
+          </div>
+          <div className="flex items-center justify-between px-2 mb-2">
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => {
+                onWeightChange(3.5);
+                onUnitChange('kg');
+              }}
+              className={`flex flex-col items-center gap-0.5 transition-transform ${
+                weight > 0 && weight <= 5 ? 'scale-110 text-emerald-400 font-bold' : 'opacity-60 text-slate-400'
+              }`}
+            >
+              <span className="text-lg">🪣</span>
+              <span className="text-[10px]">Bucket (1-5kg)</span>
+            </button>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => {
+                onWeightChange(14.5);
+                onUnitChange('kg');
+              }}
+              className={`flex flex-col items-center gap-0.5 transition-transform ${
+                weight > 5 && weight <= 20 ? 'scale-110 text-emerald-400 font-bold' : 'opacity-60 text-slate-400'
+              }`}
+            >
+              <span className="text-lg">🧺</span>
+              <span className="text-[10px]">Basket (5-20kg)</span>
+            </button>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => {
+                onWeightChange(35.0);
+                onUnitChange('kg');
+              }}
+              className={`flex flex-col items-center gap-0.5 transition-transform ${
+                weight > 20 ? 'scale-110 text-emerald-400 font-bold' : 'opacity-60 text-slate-400'
+              }`}
+            >
+              <span className="text-lg">🎒</span>
+              <span className="text-[10px]">Sack (20-50kg)</span>
+            </button>
+          </div>
+          <input
+            type="range"
+            min="0.5"
+            max="50"
+            step="0.5"
+            disabled={disabled}
+            value={unit === 'kg' ? (weight || 1) : ((weight || 1000) / 1000)}
+            onChange={(e) => {
+              const val = parseFloat(e.target.value);
+              onWeightChange(val);
+              onUnitChange('kg');
+            }}
+            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+          />
+        </div>
+
         {/* Quick select chips */}
         <div className="flex flex-wrap gap-1.5 pt-1">
           {quickWeightChips.map((chip, idx) => (
