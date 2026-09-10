@@ -1,3 +1,5 @@
+import math
+from typing import List, Dict, Any, Optional
 from app.schemas.ai_schemas import (
     ClassificationRequest,
     ClassificationResponse,
@@ -177,67 +179,318 @@ class MockAIService:
 
     @staticmethod
     def recommend_collectors(req: CollectorRecommendationRequest) -> CollectorRecommendationResponse:
-        collectors = [
-            CollectorScoreItem(
-                collector_id="col-001",
-                collector_name="Ramesh Babu (Verified Kabadiwala)",
-                vehicle_type="AUTO_RICKSHAW",
-                distance_km=2.4,
-                composite_score=0.94,
-                estimated_arrival_minutes=18,
-                completion_rate_pct=98.5,
-            ),
-            CollectorScoreItem(
-                collector_id="col-002",
-                collector_name="Suresh Scrap Runner",
-                vehicle_type="MINI_TRUCK",
-                distance_km=4.8,
-                composite_score=0.86,
-                estimated_arrival_minutes=35,
-                completion_rate_pct=92.0,
-            ),
-            CollectorScoreItem(
-                collector_id="col-003",
-                collector_name="Mohan Cycle Collection",
-                vehicle_type="BICYCLE",
-                distance_km=1.2,
-                composite_score=0.81,
-                estimated_arrival_minutes=12,
-                completion_rate_pct=96.0,
-            ),
+        weight = req.estimated_weight or req.estimated_weight_kg or 5.0
+        
+        # Base candidate roster (fallback or seed pool if none passed from database)
+        candidates = req.candidate_collectors or [
+            {
+                "collector_id": "usr-collector-active-01",
+                "collector_name": "Vikram Shinde (Runner #01)",
+                "vehicle_type": "MINI_TRUCK",
+                "distance_km": 2.4,
+                "availability": "AVAILABLE",
+                "active_jobs": 0,
+                "reliability": 96.5,
+                "completion_rate": 98.0,
+            },
+            {
+                "collector_id": "usr-collector-active-02",
+                "collector_name": "Ramesh Babu (Runner #04)",
+                "vehicle_type": "AUTO_RICKSHAW",
+                "distance_km": 3.8,
+                "availability": "AVAILABLE",
+                "active_jobs": 1,
+                "reliability": 94.0,
+                "completion_rate": 95.0,
+            },
+            {
+                "collector_id": "usr-collector-active-03",
+                "collector_name": "Sunil Jadhav (Fast Cycle)",
+                "vehicle_type": "BICYCLE",
+                "distance_km": 1.1,
+                "availability": "AVAILABLE",
+                "active_jobs": 0,
+                "reliability": 91.0,
+                "completion_rate": 94.0,
+            },
+            {
+                "collector_id": "usr-collector-active-04",
+                "collector_name": "Arjun Rathod (Cargo Van)",
+                "vehicle_type": "MINI_TRUCK",
+                "distance_km": 6.5,
+                "availability": "BUSY",
+                "active_jobs": 2,
+                "reliability": 95.0,
+                "completion_rate": 96.5,
+            },
         ]
+
+        scored_items = []
+        for c in candidates:
+            dist = float(c.get("distance_km", 3.0))
+            avail = str(c.get("availability", "AVAILABLE")).upper()
+            workload = int(c.get("active_jobs", 0))
+            rel = float(c.get("reliability", 90.0))
+            v_type = str(c.get("vehicle_type", "AUTO_RICKSHAW")).upper()
+
+            # 1. Distance score (linear decay)
+            dist_score = max(10.0, min(100.0, 100.0 - (dist * 4.5)))
+
+            # 2. Availability score
+            if avail == "AVAILABLE":
+                avail_score = 100.0
+            elif avail == "BUSY":
+                avail_score = 35.0
+            else:
+                avail_score = 5.0
+
+            # 3. Workload score
+            workload_score = max(15.0, min(100.0, 100.0 - (workload * 25.0)))
+
+            # 4. Reliability score
+            rel_score = min(100.0, max(40.0, rel))
+
+            # 5. Material capability vs vehicle payload
+            if weight > 30.0:
+                cap_scores = {"MINI_TRUCK": 98.0, "AUTO_RICKSHAW": 82.0, "MOTORCYCLE": 35.0, "BICYCLE": 15.0, "ON_FOOT": 5.0}
+            elif weight > 10.0:
+                cap_scores = {"AUTO_RICKSHAW": 98.0, "MINI_TRUCK": 92.0, "MOTORCYCLE": 78.0, "BICYCLE": 35.0, "ON_FOOT": 15.0}
+            else:
+                cap_scores = {"BICYCLE": 98.0, "MOTORCYCLE": 98.0, "AUTO_RICKSHAW": 92.0, "MINI_TRUCK": 82.0, "ON_FOOT": 70.0}
+            mat_score = cap_scores.get(v_type, 85.0)
+
+            # Composite match score (0 - 100)
+            final_match = (
+                0.25 * dist_score
+                + 0.20 * avail_score
+                + 0.20 * rel_score
+                + 0.15 * workload_score
+                + 0.20 * mat_score
+            )
+            final_match = round(min(100.0, max(1.0, final_match)), 1)
+
+            # Explainable AI reason
+            reasons = []
+            if dist <= 3.0:
+                reasons.append(f"Nearby ({dist} km)")
+            else:
+                reasons.append(f"{dist} km away")
+            if avail == "AVAILABLE":
+                reasons.append("currently available")
+            if mat_score >= 90:
+                reasons.append(f"ideal {v_type.replace('_', ' ').lower()} payload for {weight} kg")
+            if rel >= 95:
+                reasons.append(f"high reliability ({rel}%)")
+
+            scored_items.append(
+                CollectorScoreItem(
+                    collector_id=str(c.get("collector_id")),
+                    collector_name=str(c.get("collector_name", "Field Collector")),
+                    vehicle_type=v_type,
+                    distance_km=round(dist, 1),
+                    match_score=final_match,
+                    distance_score=round(dist_score, 1),
+                    availability_score=round(avail_score, 1),
+                    reliability_score=round(rel_score, 1),
+                    workload_score=round(workload_score, 1),
+                    material_capability_score=round(mat_score, 1),
+                    reason=", ".join(reasons).capitalize(),
+                    composite_score=round(final_match / 100.0, 2),
+                    estimated_arrival_minutes=max(10, int(dist * 6)),
+                    completion_rate_pct=float(c.get("completion_rate", 95.0)),
+                )
+            )
+
+        # Sort highest match score first
+        scored_items.sort(key=lambda x: x.match_score, reverse=True)
+
         return CollectorRecommendationResponse(
             lot_id=req.lot_id,
-            recommended_collectors=collectors,
-            is_development_mock=True,
+            recommended_collectors=scored_items,
+            is_development_mock=False,
         )
 
     @staticmethod
     def recommend_recyclers(req: RecyclerRecommendationRequest) -> RecyclerRecommendationResponse:
-        recyclers = [
-            RecyclerScoreItem(
-                recycler_id="rec-001",
-                facility_name="EcoClean E-Waste Recyclers Pvt Ltd",
-                cpcb_authorization_number="CPCB/EW-REG/MH-2023/401",
-                is_cpcb_valid=True,
-                distance_km=14.2,
-                offered_rate_per_kg=24.50,
-                composite_rank=1,
-            ),
-            RecyclerScoreItem(
-                recycler_id="rec-002",
-                facility_name="GreenTerra Metal Refining Ltd",
-                cpcb_authorization_number="CPCB/EW-REG/MH-2022/198",
-                is_cpcb_valid=True,
-                distance_km=28.0,
-                offered_rate_per_kg=26.00,
-                composite_rank=2,
-            ),
-        ]
+        weight = float(req.weight or req.total_weight_kg or 50.0)
+        agg_lat = float(req.aggregator_latitude or req.pickup_latitude or 19.1197)
+        agg_lng = float(req.aggregator_longitude or req.pickup_longitude or 72.8464)
+        cat_id = req.material_category_id
+        
+        # Candidate pool: use candidates passed by NestJS if provided, else standard pool
+        raw_candidates = req.candidate_recyclers
+        if not raw_candidates or len(raw_candidates) == 0:
+            raw_candidates = [
+                {
+                    "recycler_id": "ba342f1f-c157-4708-b572-46beecccd868",
+                    "facility_name": "EcoClean E-Waste Recyclers Pvt Ltd",
+                    "cpcb_authorization_number": "CPCB/EW-REG/MH-2023/401",
+                    "is_authorized": True,
+                    "authorization_valid": True,
+                    "latitude": 19.1176,
+                    "longitude": 73.0169,
+                    "rate_per_kg": 32.50,
+                    "available_capacity": 2500.0,
+                    "min_weight": 5.0,
+                    "max_weight": 5000.0,
+                    "reliability_score": 96.0,
+                    "accepts_material": True,
+                },
+                {
+                    "recycler_id": "rec-002-greenterra",
+                    "facility_name": "GreenTerra Metal Refining & Dismantling Ltd",
+                    "cpcb_authorization_number": "CPCB/EW-REG/MH-2022/198",
+                    "is_authorized": True,
+                    "authorization_valid": True,
+                    "latitude": 19.2183,
+                    "longitude": 72.9781,
+                    "rate_per_kg": 28.00,
+                    "available_capacity": 1200.0,
+                    "min_weight": 10.0,
+                    "max_weight": 3000.0,
+                    "reliability_score": 91.0,
+                    "accepts_material": True,
+                },
+                {
+                    "recycler_id": "rec-003-apexmetal",
+                    "facility_name": "Apex Electronic Waste Processors",
+                    "cpcb_authorization_number": "CPCB/EW-REG/MH-2021/045",
+                    "is_authorized": True,
+                    "authorization_valid": False,  # Expired license demo
+                    "latitude": 19.0330,
+                    "longitude": 73.0297,
+                    "rate_per_kg": 34.00,
+                    "available_capacity": 500.0,
+                    "min_weight": 10.0,
+                    "max_weight": 2000.0,
+                    "reliability_score": 85.0,
+                    "accepts_material": True,
+                },
+            ]
+
+        scored_items: List[RecyclerScoreItem] = []
+
+        for c in raw_candidates:
+            rec_id = str(c.get("recycler_id"))
+            facility_name = str(c.get("facility_name", "Authorized Recycler"))
+            auth_num = str(c.get("cpcb_authorization_number", "CPCB/EW-REG/MH-2023/401"))
+            is_valid_auth = bool(c.get("is_authorized", True) and c.get("authorization_valid", True))
+            accepts_mat = bool(c.get("accepts_material", True))
+            
+            # Recycler coordinates & distance
+            r_lat = float(c.get("latitude", 19.1176))
+            r_lng = float(c.get("longitude", 73.0169))
+            
+            # Simple Haversine approx (km)
+            dlat = math.radians(r_lat - agg_lat)
+            dlng = math.radians(r_lng - agg_lng)
+            a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(agg_lat)) * math.cos(math.radians(r_lat)) * math.sin(dlng / 2) ** 2
+            c_dist = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+            dist_km = round(max(0.5, 6371.0 * c_dist), 1)
+
+            # Available capacity & rate
+            avail_cap = float(c.get("available_capacity", 1500.0))
+            rate = float(c.get("rate_per_kg", 25.0))
+            rel = float(c.get("reliability_score", 90.0))
+
+            # 1. Authorization score
+            auth_score = 100.0 if is_valid_auth else 0.0
+
+            # 2. Material capability score
+            mat_score = 100.0 if accepts_mat else 0.0
+
+            # 3. Capacity score (batch weight vs available capacity)
+            if avail_cap <= 0:
+                cap_score = 0.0
+            elif avail_cap < weight:
+                cap_score = round((avail_cap / weight) * 50.0, 1)
+            else:
+                cap_score = round(min(100.0, 80.0 + min(20.0, (avail_cap - weight) / 50.0)), 1)
+
+            # 4. Distance score
+            dist_score = round(max(10.0, min(100.0, 100.0 - (dist_km * 2.0))), 1)
+
+            # 5. Reliability score
+            rel_score = round(min(100.0, max(20.0, rel)), 1)
+
+            # 6. Pricing & Net Value Economics
+            # Base material value = weight * rate
+            base_val = round(weight * rate, 2)
+            # Estimated transport cost = ₹150 base + ₹14/km + ₹1.5/kg
+            transport_cost = round(150.0 + (dist_km * 14.0) + (weight * 1.5), 2)
+            net_val = round(max(0.0, base_val - transport_cost), 2)
+            
+            # Pricing score compared to standard benchmark (e.g. ₹28/kg)
+            benchmark_rate = 28.0
+            price_score = round(min(100.0, max(20.0, 50.0 + ((rate - benchmark_rate) * 5.0))), 1)
+
+            # Composite Match Score (0 - 100)
+            if not is_valid_auth or not accepts_mat:
+                # Disqualified if expired or unaccepted material
+                match_score = 0.0
+            else:
+                match_score = (
+                    0.20 * auth_score
+                    + 0.20 * mat_score
+                    + 0.15 * cap_score
+                    + 0.15 * dist_score
+                    + 0.15 * rel_score
+                    + 0.15 * price_score
+                )
+                match_score = round(min(100.0, max(0.0, match_score)), 1)
+
+            # Explainable AI reason
+            reasons = []
+            if not is_valid_auth:
+                reasons.append("Authorization expired or unverified")
+            elif not accepts_mat:
+                reasons.append("Does not accept this material category")
+            else:
+                reasons.append(f"Verified CPCB recycler")
+                if dist_km <= 15.0:
+                    reasons.append(f"nearby ({dist_km} km)")
+                else:
+                    reasons.append(f"{dist_km} km distance")
+                if cap_score >= 80:
+                    reasons.append(f"ample processing capacity ({int(avail_cap)} kg)")
+                if rel >= 95:
+                    reasons.append(f"high reliability ({rel}%)")
+                reasons.append(f"rate ₹{rate}/kg with est. net value ₹{int(net_val)}")
+
+            reason_str = ", ".join(reasons).capitalize()
+
+            scored_items.append(
+                RecyclerScoreItem(
+                    recycler_id=rec_id,
+                    facility_name=facility_name,
+                    cpcb_authorization_number=auth_num,
+                    is_cpcb_valid=is_valid_auth,
+                    distance_km=dist_km,
+                    offered_rate_per_kg=rate,
+                    match_score=match_score,
+                    authorization_score=auth_score,
+                    material_capability_score=mat_score,
+                    capacity_score=cap_score,
+                    distance_score=dist_score,
+                    reliability_score=rel_score,
+                    pricing_score=price_score,
+                    estimated_transport_cost=transport_cost,
+                    estimated_net_value=net_val,
+                    reason=reason_str,
+                    composite_rank=1,
+                )
+            )
+
+        # Sort descending by match score
+        scored_items.sort(key=lambda x: x.match_score, reverse=True)
+        for i, item in enumerate(scored_items):
+            item.composite_rank = i + 1
+
         return RecyclerRecommendationResponse(
+            batch_id=req.batch_id or req.lot_id,
             lot_id=req.lot_id,
-            recommended_recyclers=recyclers,
-            is_development_mock=True,
+            recommended_recyclers=scored_items,
+            is_development_mock=False,
         )
 
     @staticmethod

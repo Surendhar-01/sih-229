@@ -11,6 +11,8 @@ import {
   Save,
   HelpCircle,
   AlertCircle,
+  ShieldCheck,
+  Loader2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ImageUploader } from '../../components/lots/ImageUploader';
@@ -352,17 +354,20 @@ export const CreateLotPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+    <div className="create-lot-page max-w-4xl mx-auto space-y-6 pb-12">
       {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-extrabold text-white tracking-tight">
-          {t('lot.createTitle')}
-        </h1>
-        <p className="text-slate-400 text-sm mt-1">{t('lot.createSubtitle')}</p>
+      <div className="lot-page-header">
+        <div>
+          <div className="lot-eyebrow"><Sparkles className="w-3.5 h-3.5" /> AI E-WASTE INSPECTION WORKSPACE</div>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight">{t('lot.createTitle')}</h1>
+          <p className="text-slate-400 text-sm mt-1">Sell or responsibly recycle your electronics with AI-powered valuation and verified collection.</p>
+        </div>
+        <div className="lot-trust-note"><ShieldCheck className="w-4 h-4" /> Secure photo processing</div>
       </div>
 
       {/* Step Stepper Header */}
-      <div className="grid grid-cols-4 gap-2 border-b border-slate-800 pb-4">
+      <div className="lot-progress-summary"><span>STEP {currentStep} OF 4</span><strong>{Math.round((currentStep / 4) * 100)}% Complete</strong></div>
+      <div className="grid grid-cols-4 gap-2 border-b border-slate-800 pb-4 lot-stepper">
         {stepsList.map((st) => {
           const isCurrent = currentStep === st.num;
           const isPassed = currentStep > st.num;
@@ -421,7 +426,18 @@ export const CreateLotPage: React.FC = () => {
             </p>
           </div>
 
-          <ImageUploader images={images} onImagesChange={setImages} />
+          <div className="lot-inspection-grid">
+            <section className="lot-upload-card">
+              <div className="lot-card-heading"><div><h3>Scan your e-waste</h3><p>Upload clear photos from multiple angles.</p></div><div className="lot-photo-count">{images.length}/5</div></div>
+              <ImageUploader images={images} onImagesChange={setImages} />
+            </section>
+
+            <section className="lot-ai-ready-card">
+              <div className="lot-card-heading"><div><h3><Sparkles className="inline-icon" /> AI inspection</h3><p>Material, components and value analysis.</p></div><span className="lot-ready-pill">{analyzingAi ? 'SCANNING' : aiResult ? 'ANALYSIS READY' : 'READY'}</span></div>
+              {!aiResult && !analyzingAi && <div className="lot-ai-empty"><Sparkles className="w-7 h-7" /><strong>Upload a photo to begin</strong><span>Our AI will identify materials and estimate recoverable value.</span></div>}
+              {analyzingAi && <div className="lot-ai-empty"><Loader2 className="w-7 h-7 animate-spin" /><strong>Analyzing your e-waste...</strong><span>Detecting device, materials and indicative value.</span></div>}
+            </section>
+          </div>
 
           {/* AI Analysis Display */}
           <AIAnalysisCard

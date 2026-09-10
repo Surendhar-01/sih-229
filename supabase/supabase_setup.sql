@@ -466,11 +466,12 @@ BEGIN
     END IF;
 
     INSERT INTO public.profiles (
-        id, phone, email, full_name, preferred_language, avatar_url, account_status, general_location, is_active, is_verified
+        id, phone, email, role, full_name, preferred_language, avatar_url, account_status, general_location, is_active, is_verified
     ) VALUES (
         NEW.id,
         COALESCE(NEW.phone, NEW.raw_user_meta_data->>'phone', 'NA_' || SUBSTRING(NEW.id::TEXT, 1, 10)),
         NEW.email,
+        assigned_role_name,
         COALESCE(NEW.raw_user_meta_data->>'full_name', 'User'),
         COALESCE(NEW.raw_user_meta_data->>'preferred_language', 'en'),
         NEW.raw_user_meta_data->>'avatar_url',

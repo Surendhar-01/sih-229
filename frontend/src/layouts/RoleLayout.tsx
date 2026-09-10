@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { checkBackendHealth } from '../services/api';
-import { UserRole } from '../types';
 import { 
   Recycle, 
   UserCheck, 
@@ -18,7 +17,7 @@ import {
 import i18n from '../i18n/i18n';
 
 export const RoleLayout: React.FC = () => {
-  const { user, logout, switchRole, language, setLanguage } = useAuthStore();
+  const { user, logout, language, setLanguage } = useAuthStore();
   const navigate = useNavigate();
   const [healthStatus, setHealthStatus] = useState<string>('Checking...');
   const [isHealthy, setIsHealthy] = useState<boolean>(false);
@@ -39,16 +38,6 @@ export const RoleLayout: React.FC = () => {
     const interval = setInterval(fetchHealth, 15000);
     return () => clearInterval(interval);
   }, []);
-
-  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newRole = e.target.value as UserRole;
-    switchRole(newRole);
-    if (newRole === 'USER') navigate('/user/dashboard');
-    if (newRole === 'INFORMAL_AGGREGATOR') navigate('/aggregator/dashboard');
-    if (newRole === 'COLLECTION_COLLECTOR') navigate('/collector/dashboard');
-    if (newRole === 'AUTHORIZED_RECYCLER') navigate('/recycler/dashboard');
-    if (newRole === 'GOVERNMENT_ADMIN') navigate('/admin/dashboard');
-  };
 
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
@@ -71,70 +60,56 @@ export const RoleLayout: React.FC = () => {
       <header
         style={{
           borderBottom: '1px solid var(--border-color)',
-          backgroundColor: 'rgba(15, 23, 42, 0.85)',
+          backgroundColor: '#ffffff',
+          WebkitBackdropFilter: 'blur(12px)',
           backdropFilter: 'blur(12px)',
           position: 'sticky',
           top: 0,
           zIndex: 50,
-          padding: '12px 24px',
+          padding: '10px 20px',
+          boxShadow: '0 1px 4px rgba(15, 23, 42, 0.05)',
         }}
       >
-        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           {/* Brand Logo */}
           <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--text-primary)' }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg, #10b981, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Recycle size={20} color="var(--text-primary)" />
+            <div style={{ width: 34, height: 34, borderRadius: 8, background: 'linear-gradient(135deg, #10b981, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Recycle size={18} color="#ffffff" />
             </div>
             <div>
-              <div style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>India E-Waste</span>
-                <span className="badge badge-emerald">DPI</span>
+              <div style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>ECOBRIDGES</span>
+                <span className="badge badge-emerald" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>DPI</span>
               </div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>National Circular Economy Platform</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>National Circular Economy Platform</div>
             </div>
           </Link>
 
           {/* Role & Switcher Bar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            {/* Quick Role Switcher for Dev Testing */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f1f5f9', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {/* Authenticated user identity */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f8fafc', padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border-color)' }}>
               {getRoleIcon(user?.role)}
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Active Role:</span>
-              <select
-                value={user?.role || 'USER'}
-                onChange={handleRoleChange}
-                style={{
-                  background: 'transparent',
-                  color: 'var(--text-primary)',
-                  border: 'none',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  outline: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                <option value="USER" style={{ background: '#f1f5f9' }}>USER (Citizen)</option>
-                <option value="INFORMAL_AGGREGATOR" style={{ background: '#f1f5f9' }}>INFORMAL AGGREGATOR</option>
-                <option value="COLLECTION_COLLECTOR" style={{ background: '#f1f5f9' }}>COLLECTION COLLECTOR</option>
-                <option value="AUTHORIZED_RECYCLER" style={{ background: '#f1f5f9' }}>AUTHORIZED RECYCLER</option>
-                <option value="GOVERNMENT_ADMIN" style={{ background: '#f1f5f9' }}>GOVERNMENT ADMIN</option>
-              </select>
+              <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>{user?.full_name || 'Authenticated User'}</span>
+                <span style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>{user?.role || 'USER'} · {user?.account_status || 'ACTIVE'}</span>
+              </div>
             </div>
 
             {/* Language Switcher */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#f1f5f9', padding: '4px 8px', borderRadius: 6 }}>
-              <Languages size={14} color="#475569" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3, background: '#f8fafc', padding: '3px 6px', borderRadius: 6, border: '1px solid var(--border-color)' }}>
+              <Languages size={13} color="#475569" />
               {['en', 'hi', 'mr'].map((lang) => (
                 <button
                   key={lang}
                   onClick={() => handleLanguageChange(lang)}
                   style={{
                     background: language === lang ? '#10b981' : 'transparent',
-                    color: language === lang ? 'var(--text-primary)' : '#475569',
+                    color: language === lang ? '#ffffff' : '#475569',
                     border: 'none',
                     borderRadius: 4,
-                    padding: '2px 6px',
-                    fontSize: '0.75rem',
+                    padding: '2px 5px',
+                    fontSize: '0.72rem',
                     fontWeight: 700,
                     cursor: 'pointer',
                     textTransform: 'uppercase',
@@ -146,9 +121,9 @@ export const RoleLayout: React.FC = () => {
             </div>
 
             {/* System Connection Pill */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: isHealthy ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)', padding: '6px 12px', borderRadius: 20, border: `1px solid ${isHealthy ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)'}` }}>
-              <Activity size={14} color={isHealthy ? '#047857' : '#fb7185'} />
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isHealthy ? '#047857' : '#fb7185' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: isHealthy ? 'rgba(16, 185, 129, 0.08)' : 'rgba(244, 63, 94, 0.08)', padding: '5px 10px', borderRadius: 20, border: `1px solid ${isHealthy ? 'rgba(16, 185, 129, 0.25)' : 'rgba(244, 63, 94, 0.25)'}` }}>
+              <Activity size={13} color={isHealthy ? '#047857' : '#e11d48'} />
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: isHealthy ? '#047857' : '#e11d48' }}>
                 {healthStatus}
               </span>
             </div>
@@ -159,14 +134,14 @@ export const RoleLayout: React.FC = () => {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
-                background: '#f1f5f9',
-                padding: '6px 12px',
+                gap: 6,
+                background: '#f8fafc',
+                padding: '5px 10px',
                 borderRadius: 8,
                 border: '1px solid var(--border-color)',
                 textDecoration: 'none',
                 color: 'var(--text-primary)',
-                fontSize: '0.8rem',
+                fontSize: '0.78rem',
               }}
             >
               <UserCheck size={14} color="#10b981" />
@@ -174,10 +149,10 @@ export const RoleLayout: React.FC = () => {
               <span
                 className="badge"
                 style={{
-                  fontSize: '0.65rem',
-                  padding: '1px 6px',
-                  background: user?.account_status === 'ACTIVE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-                  color: user?.account_status === 'ACTIVE' ? '#047857' : '#f59e0b',
+                  fontSize: '0.62rem',
+                  padding: '1px 5px',
+                  background: user?.account_status === 'ACTIVE' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                  color: user?.account_status === 'ACTIVE' ? '#047857' : '#b45309',
                   border: 'none',
                 }}
               >
@@ -189,22 +164,22 @@ export const RoleLayout: React.FC = () => {
             <button
               onClick={async () => {
                 await logout();
-                navigate('/login');
+                navigate('/');
               }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 6,
+                gap: 5,
                 background: 'transparent',
                 border: '1px solid var(--border-color)',
                 color: '#475569',
-                padding: '6px 12px',
+                padding: '5px 10px',
                 borderRadius: 8,
                 cursor: 'pointer',
-                fontSize: '0.8rem',
+                fontSize: '0.78rem',
               }}
             >
-              <LogOut size={14} />
+              <LogOut size={13} />
               <span>Logout</span>
             </button>
           </div>

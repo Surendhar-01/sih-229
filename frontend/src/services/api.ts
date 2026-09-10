@@ -8,7 +8,9 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  // Supabase-backed sign-in can legitimately take a little longer on cold
+  // connections. Keep this above the backend's normal auth round-trip.
+  timeout: 30000,
 });
 
 // Attach Authorization Bearer token from authStore
@@ -29,7 +31,9 @@ apiClient.interceptors.response.use(
     return response.data;
   },
   (error) => {
-    const customMessage = error.response?.data?.message || error.message || 'API request failed';
+    const customMessage = error.code === 'ECONNABORTED'
+      ? 'The request is taking longer than expected. Please check your connection and try again.'
+      : error.response?.data?.message || error.message || 'API request failed';
     return Promise.reject(new Error(customMessage));
   },
 );

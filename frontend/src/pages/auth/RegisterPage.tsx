@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { UserRole } from '../../types';
 import { apiClient } from '../../services/api';
-import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import { 
   UserPlus, 
   ArrowRight, 
@@ -20,19 +19,30 @@ import {
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setAuth } = useAuthStore();
   
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('+91');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('USER');
+  const [selectedRole, setSelectedRole] = useState<UserRole>(
+    (location.state as { selectedRole?: UserRole } | null)?.selectedRole || 'USER',
+  );
   const [preferredLang, setPreferredLang] = useState('en');
   const [generalLocation, setGeneralLocation] = useState('');
   const [cpcbNumber, setCpcbNumber] = useState('');
   const [vehicleType, setVehicleType] = useState('ELECTRIC_3WHEELER');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const roleLabels: Record<UserRole, string> = {
+    USER: 'Citizen / Household Consumer',
+    INFORMAL_AGGREGATOR: 'Informal Scrap Aggregator',
+    COLLECTION_COLLECTOR: 'Field Collector / Kabadiwala',
+    AUTHORIZED_RECYCLER: 'CPCB Authorized Recycler',
+    GOVERNMENT_ADMIN: 'CPCB / SPCB Regulatory Admin',
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,66 +57,18 @@ export const RegisterPage: React.FC = () => {
     }
 
     try {
-      // 1. Try Supabase Auth Signup if Supabase is online
-      let supabaseUserId = `usr-${Date.now().toString().slice(-6)}`;
-      let accessToken = `dev-mock-${selectedRole.toLowerCase()}`;
-
-      if (isSupabaseConfigured() && email && password) {
-        try {
-          const { data: authData, error: authErr } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: {
-                full_name: fullName,
-                role: selectedRole,
-                phone,
-                preferred_language: preferredLang,
-                general_location: generalLocation,
-              },
-            },
-          });
-          if (authErr) throw authErr;
-          if (authData.user) {
-            supabaseUserId = authData.user.id;
-            accessToken = authData.session?.access_token || accessToken;
-          }
-        } catch (supabaseErr: any) {
-          console.warn('Supabase Auth error, attempting direct backend registration:', supabaseErr.message);
-        }
-      }
-
-      // 2. Call NestJS backend /auth/register
-      const payload = {
-        email: email || `${fullName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'applicant'}@ewaste.in`,
-        phone,
-        password: password || 'SecurePass123!',
-        full_name: fullName,
-        role: selectedRole,
-        preferred_language: preferredLang,
-        general_location: generalLocation,
+      const response = await apiClient.post('/auth/register', {
+        email, password, phone, full_name: fullName, role: selectedRole,
+        preferred_language: preferredLang, general_location: generalLocation,
         vehicle_type: selectedRole === 'COLLECTION_COLLECTOR' ? vehicleType : undefined,
         cpcb_authorization_number: selectedRole === 'AUTHORIZED_RECYCLER' ? cpcbNumber : undefined,
-      };
-
-      const res = await apiClient.post('/auth/register', payload);
-
-      const registeredUser = res.data?.data || {
-        id: supabaseUserId,
-        email: payload.email,
-        phone: payload.phone,
-        full_name: payload.full_name,
-        role: selectedRole,
-        account_status: selectedRole === 'USER' ? 'ACTIVE' : 'PENDING',
-        preferred_language: preferredLang,
-        general_location: generalLocation,
-        is_verified: selectedRole === 'USER',
-        vehicle_type: payload.vehicle_type,
-        cpcb_authorization_number: payload.cpcb_authorization_number,
-      };
+      });
+      const authResult = response.data || response;
+      const registeredUser: any = authResult.profile;
+      const accessToken = authResult.session?.access_token;
 
       // Set auth state
-      setAuth(registeredUser, accessToken);
+      if (accessToken) setAuth(registeredUser, accessToken);
 
       // Route based on account status & role
       if (registeredUser.account_status === 'ACTIVE') {
@@ -116,7 +78,12 @@ export const RegisterPage: React.FC = () => {
         navigate('/pending');
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Registration failed. Please check your credentials.');
+      const message = err?.message || 'Registration failed. Please check your credentials.';
+      setErrorMessage(message.toLowerCase().includes('already registered') || message.toLowerCase().includes('already been registered')
+        ? 'This email is already registered. Please use the Sign In link below.'
+        : message.toLowerCase().includes('failed to fetch')
+        ? 'Unable to reach Supabase. Restart the frontend after checking VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in frontend/.env.'
+        : message);
     } finally {
       setLoading(false);
     }
@@ -129,6 +96,25 @@ export const RegisterPage: React.FC = () => {
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 4 }}>
           Register your entity into the National E-Waste Circular Economy Network
         </p>
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '10px 14px',
+          marginBottom: 18,
+          borderRadius: 8,
+          background: '#ecfdf5',
+          border: '1px solid #a7f3d0',
+          color: '#047857',
+          fontSize: '0.85rem',
+          fontWeight: 700,
+        }}
+      >
+        <UserCheck size={17} />
+        <span>Registering as: {roleLabels[selectedRole]}</span>
       </div>
 
       {errorMessage && (
@@ -153,11 +139,11 @@ export const RegisterPage: React.FC = () => {
 
       <form onSubmit={handleRegister}>
         {/* Role Selector Cards */}
-        <div style={{ marginBottom: 18 }}>
+        <div style={{ display: 'none', marginBottom: 18 }}>
           <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 8, color: '#334155' }}>
             Select Stakeholder Category
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
             {[
               { role: 'USER' as UserRole, label: 'Citizen / Household', icon: <UserCheck size={16} />, activeColor: '#10b981' },
               { role: 'COLLECTION_COLLECTOR' as UserRole, label: 'Collection Collector', icon: <Truck size={16} />, activeColor: '#0369a1' },
@@ -169,7 +155,8 @@ export const RegisterPage: React.FC = () => {
                 type="button"
                 onClick={() => setSelectedRole(item.role)}
                 style={{
-                  padding: '10px 12px',
+                  minHeight: 52,
+                  padding: '12px 14px',
                   borderRadius: 8,
                   border: selectedRole === item.role ? `2px solid ${item.activeColor}` : '1px solid var(--border-color)',
                   background: selectedRole === item.role ? 'rgba(255, 255, 255, 0.92)' : '#ffffff',
@@ -179,7 +166,7 @@ export const RegisterPage: React.FC = () => {
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 8,
+                  gap: 10,
                   textAlign: 'left',
                 }}
               >
@@ -306,16 +293,14 @@ export const RegisterPage: React.FC = () => {
             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#0369a1' }}>
               Collection Transport Type
             </label>
-            <select
+            <input
+              type="text"
               value={vehicleType}
               onChange={(e) => setVehicleType(e.target.value)}
+              required
+              placeholder="e.g. Electric 3-Wheeler, Mini Truck, Hand Cart"
               style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#ffffff', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
-            >
-              <option value="ELECTRIC_3WHEELER">Electric 3-Wheeler / E-Rickshaw Cargo</option>
-              <option value="BICYCLE">Bicycle with Carrier Basket</option>
-              <option value="MINI_TRUCK">Light Commercial Vehicle (Tata Ace / Pickup)</option>
-              <option value="HAND_CART">Hand Cart (Pehla)</option>
-            </select>
+            />
           </div>
         )}
 
@@ -357,4 +342,3 @@ export const RegisterPage: React.FC = () => {
     </div>
   );
 };
-

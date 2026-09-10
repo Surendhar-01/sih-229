@@ -26,7 +26,13 @@ async function bootstrap() {
 
   // 3. Strict Development / Production CORS
   app.enableCors({
-    origin: [frontendUrl, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+    origin: [
+      frontendUrl,
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      'http://localhost:5174',
+      'http://127.0.0.1:5174',
+    ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Idempotency-Key'],
@@ -53,7 +59,7 @@ async function bootstrap() {
 
   // 7. Swagger / OpenAPI Documentation
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('India E-Waste Management DPI API')
+    .setTitle('ECOBRIDGES API')
     .setDescription(
       'Production-ready backend API connecting Citizens, Informal Aggregators, Field Collectors, Authorized Recyclers, and Government Regulators.',
     )

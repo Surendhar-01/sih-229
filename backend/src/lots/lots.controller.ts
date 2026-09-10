@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { LotsService } from './lots.service';
 import { CreateLotDto } from './dto/create-lot.dto';
@@ -70,6 +70,30 @@ export class LotsController {
     return this.lotsService.updateStatus(id, status, user.id, user.role);
   }
 
+  @Put(':id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a lot status using REST PUT semantics' })
+  async replaceLotStatus(
+    @Param('id') id: string,
+    @Body('status') status: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.lotsService.updateStatus(id, status, user.id, user.role);
+  }
+
+  @Delete(':id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cancel/delete a lot before pickup completion' })
+  async deleteLot(
+    @Param('id') id: string,
+    @Body('reason') reason: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.lotsService.cancelLot(id, user.id, reason || 'Cancelled by user');
+  }
+
   @Post(':id/verify-pickup')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
@@ -94,4 +118,3 @@ export class LotsController {
     return this.lotsService.assignCollector(id, body.collector_id, body.collector_name, user.id);
   }
 }
-

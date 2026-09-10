@@ -1,45 +1,109 @@
-import { Controller, Post, Body, UseGuards, Injectable, Module } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { BadRequestException, Body, ConflictException, Controller, Get, Injectable, Module, NotFoundException, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SupabaseService } from '../config/supabase.service';
 import { AuthGuard } from '../common/guards/auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
+import { CreateAdjustmentDto, CreateDisputeDto, CreateObligationDto, InitiatePaymentDto, ReconcileDto, TransitionPaymentDto } from './dto/finance.dto';
+
+const paymentStates: Record<string, string[]> = { PENDING: ['PROCESSING', 'PENDING_CONFIRMATION', 'CANCELLED', 'DISPUTED'], PENDING_CONFIRMATION: ['SUCCESS', 'FAILED', 'DISPUTED'], PROCESSING: ['SUCCESS', 'FAILED', 'DISPUTED'], SUCCESS: ['REFUNDED', 'DISPUTED'] };
+const settlementFor: Record<string, string> = { USER_PAYOUT: 'USER_SETTLEMENT', COLLECTOR_EARNING: 'COLLECTOR_SETTLEMENT', RECYCLER_RECEIVABLE: 'RECYCLER_SETTLEMENT', AGGREGATOR_SETTLEMENT: 'AGGREGATOR_SETTLEMENT' };
 
 @Injectable()
 export class PaymentsService {
-  constructor(
-    private readonly supabaseService: SupabaseService,
-    private readonly auditService: AuditService,
-  ) {}
-
-  async settleCashPayment(lotId: string, amount: number, collectorId: string) {
-    return {
-      success: true,
-      lot_id: lotId,
-      amount,
-      method: 'CASH',
-      status: 'SETTLED',
-      receipt_number: `RCP-${Date.now()}`,
-    };
+  constructor(private readonly supabase: SupabaseService, private readonly audit: AuditService) {}
+  private client() { if (!this.supabase.isConfigured()) throw new BadRequestException('Finance requires active Supabase configuration.'); return this.supabase.getAdminClient(); }
+  async one(table: string, id: string) { const { data, error } = await this.client().from(table).select('*').eq('id', id).maybeSingle(); if (error) throw new BadRequestException(error.message); if (!data) throw new NotFoundException(`${table} record not found`); return data; }
+  private async notify(recipient_id: string, type: string, body: string) { await this.client().from('notifications').insert([{ recipient_id, notification_type: type, title: type.replaceAll('_', ' '), body, sent_at: new Date().toISOString() }]); }
+  private async paidTotal(obligationId: string) { const { data, error } = await this.client().from('payment_transactions').select('amount').eq('payment_obligation_id', obligationId).eq('status', 'SUCCESS').eq('transaction_type', 'PAYMENT'); if (error) throw new BadRequestException(error.message); return (data || []).reduce((total, item) => total + Number(item.amount), 0); }
+  private async refreshSettlement(obligation: any) {
+    const paid = await this.paidTotal(obligation.id); const total = Number(obligation.original_amount);
+    const status = paid >= total ? 'SETTLED' : paid > 0 ? 'PARTIALLY_SETTLED' : 'PENDING';
+    await this.client().from('payment_obligations').update({ status, updated_at: new Date().toISOString() }).eq('id', obligation.id);
+    await this.client().from('settlements').update({ status, settled_at: status === 'SETTLED' ? new Date().toISOString() : null, updated_at: new Date().toISOString() }).eq('payment_obligation_id', obligation.id);
+    return { paid, remaining: Math.max(0, total - paid), status };
   }
+  async createObligation(dto: CreateObligationDto, actor: any) {
+    const client = this.client(); const existing = await client.from('payment_obligations').select('*').eq('idempotency_key', dto.idempotency_key).maybeSingle(); if (existing.data) return existing.data;
+    const handover = await this.one('recycler_handovers', dto.handover_id); if (handover.status !== 'RECEIVED' || !Number(handover.accepted_weight || handover.received_weight)) throw new BadRequestException('Obligations can be created only after received handover verification.');
+    if (actor.role !== 'GOVERNMENT_ADMIN' && actor.id !== handover.aggregator_id) throw new BadRequestException('Only the responsible aggregator can create settlement obligations.');
+    const calculation = await client.from('financial_calculations').select('*').eq('handover_id', dto.handover_id).maybeSingle(); if (!calculation.data) throw new BadRequestException('Run financial reconciliation before creating obligations.');
+    const amounts: Record<string, number> = { USER_PAYOUT: Number(calculation.data.aggregator_final_quote), COLLECTOR_EARNING: Number(calculation.data.collector_final_earning), RECYCLER_RECEIVABLE: Number(calculation.data.final_accepted_amount), AGGREGATOR_SETTLEMENT: Math.max(0, Number(calculation.data.aggregator_margin)) };
+    const amount = amounts[dto.obligation_type]; if (!amount) throw new BadRequestException('This obligation has no payable amount.');
+    const payee = await this.one('profiles', dto.payee_id);
+    const payer = dto.obligation_type === 'RECYCLER_RECEIVABLE' ? await this.one('profiles', handover.recycler_id) : await this.one('profiles', handover.aggregator_id);
+    const payload = { calculation_id: calculation.data.id, lot_id: calculation.data.lot_id, batch_id: handover.batch_id, handover_id: handover.id, payer_id: payer.id, payer_role: payer.role, payee_id: payee.id, payee_role: payee.role, obligation_type: dto.obligation_type, original_amount: amount, due_at: dto.due_at || null, status: 'READY', idempotency_key: dto.idempotency_key };
+    const { data, error } = await client.from('payment_obligations').insert([payload]).select().single(); if (error) { if (error.code === '23505') throw new ConflictException('Obligation already exists.'); throw new BadRequestException(error.message); }
+    await client.from('settlements').insert([{ payment_obligation_id: data.id, lot_id: data.lot_id, batch_id: data.batch_id, handover_id: data.handover_id, party_id: data.payee_id, party_role: data.payee_role, settlement_type: settlementFor[dto.obligation_type], gross_amount: amount, net_amount: amount, status: 'READY', due_at: data.due_at }]);
+    await this.audit.logEvent({ actor_id: actor.id, actor_role: actor.role, action: 'PAYMENT_OBLIGATION_CREATED', entity_type: 'payment_obligations', entity_id: data.id, lot_id: data.lot_id, new_data: payload }); await this.notify(data.payee_id, 'PAYMENT_CREATED', `A payment obligation ${data.obligation_reference} is ready.`); return data;
+  }
+  async listObligations(user: any) { const client = this.client(); let query = client.from('payment_obligations').select('*').order('created_at', { ascending: false }); if (user.role !== 'GOVERNMENT_ADMIN') query = query.or(`payer_id.eq.${user.id},payee_id.eq.${user.id}`); const { data, error } = await query; if (error) throw new BadRequestException(error.message); return data || []; }
+  async initiate(id: string, dto: InitiatePaymentDto, actor: any) {
+    const obligation = await this.one('payment_obligations', id); if (actor.role !== 'GOVERNMENT_ADMIN' && actor.id !== obligation.payer_id) throw new BadRequestException('Only the payer may initiate payment.');
+    const existing = await this.client().from('payment_transactions').select('*').eq('idempotency_key', dto.idempotency_key).maybeSingle(); if (existing.data) return existing.data;
+    const remaining = Number(obligation.original_amount) - await this.paidTotal(id); if (dto.amount > remaining) throw new BadRequestException('Payment exceeds outstanding obligation amount.');
+    const status = dto.payment_method === 'CASH' ? 'PENDING_CONFIRMATION' : 'PROCESSING';
+    const { data, error } = await this.client().from('payment_transactions').insert([{ payment_obligation_id: id, payer_id: obligation.payer_id, payee_id: obligation.payee_id, amount: dto.amount, payment_method: dto.payment_method, provider_name: dto.provider_name || null, provider_transaction_reference: dto.provider_transaction_reference || null, cash_reference: dto.cash_reference || null, proof_storage_path: dto.proof_storage_path || null, status, idempotency_key: dto.idempotency_key }]).select().single(); if (error) throw new BadRequestException(error.message);
+    await this.client().from('payment_obligations').update({ status: 'PENDING', updated_at: new Date().toISOString() }).eq('id', id); await this.audit.logEvent({ actor_id: actor.id, actor_role: actor.role, action: 'PAYMENT_INITIATED', entity_type: 'payment_transactions', entity_id: data.id, transaction_id: data.id, lot_id: obligation.lot_id, new_data: { amount: dto.amount, payment_method: dto.payment_method } }); await this.notify(obligation.payee_id, 'PAYMENT_PROCESSING', `Payment ${data.transaction_reference} is being processed.`); return data;
+  }
+  async transition(id: string, next: 'SUCCESS' | 'FAILED' | 'CANCELLED', dto: TransitionPaymentDto, actor: any) {
+    const transaction = await this.one('payment_transactions', id); if (!paymentStates[transaction.status]?.includes(next)) throw new BadRequestException(`Invalid payment transition from ${transaction.status} to ${next}.`); if (actor.role !== 'GOVERNMENT_ADMIN' && actor.id !== transaction.payer_id) throw new BadRequestException('Only payer or admin can update payment status.');
+    if (next === 'SUCCESS' && transaction.payment_method !== 'CASH' && !dto.provider_transaction_reference && !transaction.provider_transaction_reference) throw new BadRequestException('Digital confirmation requires a provider transaction reference.');
+    const { data, error } = await this.client().from('payment_transactions').update({ status: next, provider_transaction_reference: dto.provider_transaction_reference || transaction.provider_transaction_reference, failure_reason: dto.failure_reason || null, confirmed_by: next === 'SUCCESS' ? actor.id : null, confirmed_at: next === 'SUCCESS' ? new Date().toISOString() : null, updated_at: new Date().toISOString() }).eq('id', id).select().single(); if (error) throw new BadRequestException(error.message);
+    const obligation = await this.one('payment_obligations', transaction.payment_obligation_id); if (next === 'SUCCESS') { const reverse = transaction.transaction_type === 'REFUND'; await this.client().from('financial_ledger_entries').insert([{ transaction_id: id, obligation_id: obligation.id, account_owner_id: transaction.payer_id, account_role: reverse ? obligation.payee_role : obligation.payer_role, entry_side: 'DEBIT', amount: transaction.amount, description: `${reverse ? 'Refund' : 'Payment'} ${data.transaction_reference}` }, { transaction_id: id, obligation_id: obligation.id, account_owner_id: transaction.payee_id, account_role: reverse ? obligation.payer_role : obligation.payee_role, entry_side: 'CREDIT', amount: transaction.amount, description: `${reverse ? 'Refund' : 'Payment'} ${data.transaction_reference}` }]); if (!reverse) await this.refreshSettlement(obligation); }
+    await this.audit.logEvent({ actor_id: actor.id, actor_role: actor.role, action: `PAYMENT_${next}`, entity_type: 'payment_transactions', entity_id: id, transaction_id: id, lot_id: obligation.lot_id, old_data: { status: transaction.status }, new_data: { status: next } }); await this.notify(transaction.payee_id, next === 'SUCCESS' ? 'PAYMENT_SUCCESS' : 'PAYMENT_FAILED', `Payment ${data.transaction_reference} is ${next.toLowerCase()}.`); return data;
+  }
+  async receipt(id: string, actor: any) { const transaction = await this.one('payment_transactions', id); if (actor.role !== 'GOVERNMENT_ADMIN' && ![transaction.payer_id, transaction.payee_id].includes(actor.id)) throw new BadRequestException('Receipt is not available to this user.'); const obligation = await this.one('payment_obligations', transaction.payment_obligation_id); return { receipt_reference: `RCP-${transaction.transaction_reference}`, issued_at: transaction.confirmed_at || transaction.created_at, transaction, obligation }; }
+  async reconcile(handoverId: string, dto: ReconcileDto, actor: any) {
+    const client = this.client(); const existing = await client.from('financial_reconciliations').select('*').eq('handover_id', handoverId).maybeSingle(); if (existing.data) return existing.data; const handover = await this.one('recycler_handovers', handoverId); if (handover.status !== 'RECEIVED' || !Number(handover.accepted_weight || handover.received_weight)) throw new BadRequestException('Handover must be received with an accepted weight.'); if (actor.role !== 'GOVERNMENT_ADMIN' && actor.id !== handover.aggregator_id) throw new BadRequestException('Only the responsible aggregator can reconcile this handover.');
+    const quote = handover.quote_id ? await client.from('recycler_quotes').select('*').eq('id', handover.quote_id).maybeSingle() : { data: null }; const batch = await this.one('recycler_batches', handover.batch_id); const { data: inventory } = await client.from('aggregator_inventory').select('lot_id').eq('id', (await client.from('recycler_batch_items').select('inventory_id').eq('batch_id', handover.batch_id).limit(1).maybeSingle()).data?.inventory_id || '').maybeSingle(); const lotId = inventory?.lot_id || null;
+    const { data: aggQuote } = lotId ? await client.from('aggregator_quotes').select('*').eq('lot_id', lotId).eq('aggregator_id', handover.aggregator_id).maybeSingle() : { data: null }; const { data: assignment } = lotId ? await client.from('collector_assignments').select('*').eq('lot_id', lotId).limit(1).maybeSingle() : { data: null };
+    const acceptedWeight = Number(handover.accepted_weight || handover.received_weight); const rate = Number(quote.data?.rate_per_kg || quote.data?.quoted_rate_per_kg || 0); const finalAmount = Number((acceptedWeight * rate).toFixed(2)); const collector = Number(assignment?.collector_earning || assignment?.payout_amount || 0); const collectionCost = Number(aggQuote?.collection_cost || 0); const handlingCost = Number(aggQuote?.handling_cost || 0); const margin = Number((finalAmount - Number(aggQuote?.final_quote || 0) - collector - collectionCost - handlingCost).toFixed(2));
+    const calculationPayload = { handover_id: handoverId, lot_id: lotId, batch_id: handover.batch_id, aggregator_id: handover.aggregator_id, recycler_id: handover.recycler_id, accepted_weight_kg: acceptedWeight, ai_estimated_value: Number(aggQuote?.recommended_price || 0), market_reference_value: Number(aggQuote?.market_reference_value || 0), aggregator_recommended_price: Number(aggQuote?.recommended_price || 0), aggregator_final_quote: Number(aggQuote?.final_quote || 0), collector_expected_earning: collector, collector_final_earning: collector, recycler_quote: Number(quote.data?.total_quote_amount || 0), expected_recycler_amount: Number(quote.data?.total_quote_amount || finalAmount), final_verified_amount: finalAmount, final_accepted_amount: finalAmount, collection_cost: collectionCost, handling_cost: handlingCost, transport_cost: 0, aggregator_margin: margin, adjustment_amount: 0, tax_amount: 0, total_payable: finalAmount, created_by: actor.id };
+    const { data: calculation, error } = await client.from('financial_calculations').insert([calculationPayload]).select().single(); if (error) throw new BadRequestException(error.message); const reconciliationPayload = { handover_id: handoverId, calculation_id: calculation.id, expected_weight_kg: handover.expected_weight, accepted_weight_kg: acceptedWeight, weight_difference_kg: acceptedWeight - Number(handover.expected_weight), status: 'READY', reconciled_by: actor.id, notes: dto.notes || null }; const result = await client.from('financial_reconciliations').insert([reconciliationPayload]).select().single(); if (result.error) throw new BadRequestException(result.error.message); await client.from('financial_snapshots').insert([{ handover_id: handoverId, calculation_id: calculation.id, snapshot: calculationPayload }]); await client.from('material_lots').update({ status: 'PAYMENT_PENDING' }).eq('id', lotId); await this.audit.logEvent({ actor_id: actor.id, actor_role: actor.role, action: 'FINANCIAL_RECONCILIATION_CREATED', entity_type: 'financial_reconciliations', entity_id: result.data.id, lot_id: lotId, new_data: calculationPayload }); return { reconciliation: result.data, calculation };
+  }
+  async financeSummary(user: any) { const obligations = await this.listObligations(user); const payments = obligations.filter((o: any) => o.payer_id === user.id).reduce((total: number, o: any) => total + Number(o.original_amount), 0); return { total_obligations: obligations.length, pending_amount: obligations.filter((o: any) => o.status !== 'SETTLED').reduce((total: number, o: any) => total + Number(o.original_amount), 0), receivables: obligations.filter((o: any) => o.payee_id === user.id).reduce((total: number, o: any) => total + Number(o.original_amount), 0), payables: payments, records: obligations }; }
+  async adjustment(dto: CreateAdjustmentDto, actor: any) { const existing = await this.client().from('financial_adjustments').select('*').eq('idempotency_key', dto.idempotency_key).maybeSingle(); if (existing.data) return existing.data; const calculation = await this.one('financial_calculations', dto.calculation_id); if (actor.role !== 'GOVERNMENT_ADMIN' && actor.id !== calculation.aggregator_id) throw new BadRequestException('Only the relevant aggregator may request an adjustment.'); const { data, error } = await this.client().from('financial_adjustments').insert([{ ...dto, requested_by: actor.id, requested_role: actor.role }]).select().single(); if (error) throw new BadRequestException(error.message); await this.audit.logEvent({ actor_id: actor.id, actor_role: actor.role, action: 'FINANCIAL_ADJUSTMENT_REQUESTED', entity_type: 'financial_adjustments', entity_id: data.id, lot_id: calculation.lot_id, new_data: dto }); return data; }
+  async decideAdjustment(id: string, approve: boolean, actor: any) { const item = await this.one('financial_adjustments', id); if (item.status !== 'PENDING') throw new BadRequestException('Only pending adjustments can be decided.'); const { data, error } = await this.client().from('financial_adjustments').update({ status: approve ? 'APPROVED' : 'REJECTED', approved_by: actor.id, approved_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', id).select().single(); if (error) throw new BadRequestException(error.message); await this.audit.logEvent({ actor_id: actor.id, actor_role: actor.role, action: approve ? 'FINANCIAL_ADJUSTMENT_APPROVED' : 'FINANCIAL_ADJUSTMENT_REJECTED', entity_type: 'financial_adjustments', entity_id: id, new_data: { status: data.status } }); return data; }
+  async refund(id: string, dto: InitiatePaymentDto, actor: any) { const original = await this.one('payment_transactions', id); if (original.status !== 'SUCCESS') throw new BadRequestException('Only successful payments can be refunded.'); if (actor.role !== 'GOVERNMENT_ADMIN' && actor.id !== original.payee_id) throw new BadRequestException('Only the original payee or admin may initiate a refund.'); const existing = await this.client().from('payment_transactions').select('*').eq('idempotency_key', dto.idempotency_key).maybeSingle(); if (existing.data) return existing.data; const { data, error } = await this.client().from('payment_transactions').insert([{ payment_obligation_id: original.payment_obligation_id, payer_id: original.payee_id, payee_id: original.payer_id, transaction_type: 'REFUND', amount: Math.min(dto.amount, Number(original.amount)), payment_method: dto.payment_method, provider_name: dto.provider_name || null, provider_transaction_reference: dto.provider_transaction_reference || null, cash_reference: dto.cash_reference || null, proof_storage_path: dto.proof_storage_path || null, status: dto.payment_method === 'CASH' ? 'PENDING_CONFIRMATION' : 'PROCESSING', refunded_transaction_id: original.id, idempotency_key: dto.idempotency_key }]).select().single(); if (error) throw new BadRequestException(error.message); return data; }
+  async dispute(dto: CreateDisputeDto, actor: any) { const obligation = await this.one('payment_obligations', dto.payment_obligation_id); if (actor.role !== 'GOVERNMENT_ADMIN' && ![obligation.payer_id, obligation.payee_id].includes(actor.id)) throw new BadRequestException('Only a payment party can raise a dispute.'); const { data, error } = await this.client().from('payment_disputes').insert([{ ...dto, raised_by: actor.id }]).select().single(); if (error) throw new BadRequestException(error.message); await this.client().from('payment_obligations').update({ status: 'DISPUTED', updated_at: new Date().toISOString() }).eq('id', obligation.id); await this.client().from('settlements').update({ status: 'DISPUTED', updated_at: new Date().toISOString() }).eq('payment_obligation_id', obligation.id); await this.audit.logEvent({ actor_id: actor.id, actor_role: actor.role, action: 'PAYMENT_DISPUTED', entity_type: 'payment_disputes', entity_id: data.id, lot_id: obligation.lot_id, new_data: dto }); return data; }
 }
 
-@ApiTags('Payments')
-@Controller('payments')
-@UseGuards(AuthGuard)
+@ApiTags('Payments & Finance')
+@Controller()
+@UseGuards(AuthGuard, RolesGuard)
 export class PaymentsController {
-  constructor(private readonly paymentsService: PaymentsService) {}
-
-  @Post('settle-cash')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Settle cash payment on pickup with digital receipt' })
-  async settleCash(@Body() body: { lot_id: string; amount: number; collector_id: string }) {
-    return this.paymentsService.settleCashPayment(body.lot_id, body.amount, body.collector_id);
-  }
+  constructor(private readonly service: PaymentsService) {}
+  @Get('payments/obligations') @ApiBearerAuth() list(@CurrentUser() user: any) { return this.service.listObligations(user); }
+  @Get('payments/obligations/:id') @ApiBearerAuth() async obligation(@Param('id') id: string, @CurrentUser() user: any) { const item = await this.service.one('payment_obligations', id); if (user.role !== 'GOVERNMENT_ADMIN' && ![item.payer_id, item.payee_id].includes(user.id)) throw new BadRequestException('Not allowed.'); return item; }
+  @Post('payments/obligations') @Roles('INFORMAL_AGGREGATOR', 'GOVERNMENT_ADMIN') create(@Body() dto: CreateObligationDto, @CurrentUser() user: any) { return this.service.createObligation(dto, user); }
+  @Post('payments/:id/initiate') @Roles('USER','COLLECTION_COLLECTOR','INFORMAL_AGGREGATOR','AUTHORIZED_RECYCLER') initiate(@Param('id') id: string, @Body() dto: InitiatePaymentDto, @CurrentUser() user: any) { return this.service.initiate(id, dto, user); }
+  @Post('payments/:id/confirm') @Roles('USER','COLLECTION_COLLECTOR','INFORMAL_AGGREGATOR','AUTHORIZED_RECYCLER') confirm(@Param('id') id: string, @Body() dto: TransitionPaymentDto, @CurrentUser() user: any) { return this.service.transition(id, 'SUCCESS', dto, user); }
+  @Post('payments/:id/fail') @Roles('USER','COLLECTION_COLLECTOR','INFORMAL_AGGREGATOR','AUTHORIZED_RECYCLER') fail(@Param('id') id: string, @Body() dto: TransitionPaymentDto, @CurrentUser() user: any) { return this.service.transition(id, 'FAILED', dto, user); }
+  @Post('payments/:id/cancel') @Roles('USER','COLLECTION_COLLECTOR','INFORMAL_AGGREGATOR','AUTHORIZED_RECYCLER') cancel(@Param('id') id: string, @Body() dto: TransitionPaymentDto, @CurrentUser() user: any) { return this.service.transition(id, 'CANCELLED', dto, user); }
+  @Post('payments/:id/refund') @Roles('USER','COLLECTION_COLLECTOR','INFORMAL_AGGREGATOR','AUTHORIZED_RECYCLER') refund(@Param('id') id: string, @Body() dto: InitiatePaymentDto, @CurrentUser() user: any) { return this.service.refund(id, dto, user); }
+  @Get('payments/:id/receipt') @ApiBearerAuth() receipt(@Param('id') id: string, @CurrentUser() user: any) { return this.service.receipt(id, user); }
+  @Get('payments/:id') @ApiBearerAuth() async payment(@Param('id') id: string, @CurrentUser() user: any) { const item = await this.service.one('payment_transactions', id); if (user.role !== 'GOVERNMENT_ADMIN' && ![item.payer_id, item.payee_id].includes(user.id)) throw new BadRequestException('Not allowed.'); return item; }
+  @Get('payments') @ApiBearerAuth() payments(@CurrentUser() user: any) { return this.service.listObligations(user); }
+  @Get('user/payments') @Roles('USER') userPayments(@CurrentUser() user: any) { return this.service.financeSummary(user); }
+  @Get('user/payments/:id') @Roles('USER') userPayment(@Param('id') id: string, @CurrentUser() user: any) { return this.service.receipt(id, user); }
+  @Get('collector/earnings') @Roles('COLLECTION_COLLECTOR') collectorEarnings(@CurrentUser() user: any) { return this.service.financeSummary(user); }
+  @Get('collector/earnings/:id') @Roles('COLLECTION_COLLECTOR') collectorEarning(@Param('id') id: string, @CurrentUser() user: any) { return this.service.receipt(id, user); }
+  @Get('aggregator/finance') @Roles('INFORMAL_AGGREGATOR') aggregatorFinance(@CurrentUser() user: any) { return this.service.financeSummary(user); }
+  @Get('aggregator/finance/transactions') @Roles('INFORMAL_AGGREGATOR') transactions(@CurrentUser() user: any) { return this.service.listObligations(user); }
+  @Get('aggregator/finance/reconciliation') @Roles('INFORMAL_AGGREGATOR') async aggregatorReconciliation(@CurrentUser() user: any) { const { data, error } = await this.service['client']().from('financial_reconciliations').select('*, financial_calculations!inner(aggregator_id)').eq('financial_calculations.aggregator_id', user.id).order('reconciled_at', { ascending: false }); if (error) throw new BadRequestException(error.message); return data || []; }
+  @Get('recycler/payments') @Roles('AUTHORIZED_RECYCLER') recyclerPayments(@CurrentUser() user: any) { return this.service.financeSummary(user); }
+  @Get('recycler/payments/:id') @Roles('AUTHORIZED_RECYCLER') recyclerPayment(@Param('id') id: string, @CurrentUser() user: any) { return this.service.receipt(id, user); }
+  @Post('finance/adjustments') @Roles('INFORMAL_AGGREGATOR','GOVERNMENT_ADMIN') adjustment(@Body() dto: CreateAdjustmentDto, @CurrentUser() user: any) { return this.service.adjustment(dto, user); }
+  @Get('finance/adjustments') @ApiBearerAuth() async adjustments(@CurrentUser() user: any) { let query = this.service['client']().from('financial_adjustments').select('*').order('created_at', { ascending: false }); if (user.role !== 'GOVERNMENT_ADMIN') query = query.eq('requested_by', user.id); const { data, error } = await query; if (error) throw new BadRequestException(error.message); return data || []; }
+  @Post('finance/adjustments/:id/approve') @Roles('GOVERNMENT_ADMIN') approveAdjustment(@Param('id') id: string, @CurrentUser() user: any) { return this.service.decideAdjustment(id, true, user); }
+  @Post('finance/adjustments/:id/reject') @Roles('GOVERNMENT_ADMIN') rejectAdjustment(@Param('id') id: string, @CurrentUser() user: any) { return this.service.decideAdjustment(id, false, user); }
+  @Post('finance/disputes') @ApiBearerAuth() dispute(@Body() dto: CreateDisputeDto, @CurrentUser() user: any) { return this.service.dispute(dto, user); }
+  @Post('finance/reconciliation/:handoverId') @Roles('INFORMAL_AGGREGATOR','GOVERNMENT_ADMIN') reconcile(@Param('handoverId') id: string, @Body() dto: ReconcileDto, @CurrentUser() user: any) { return this.service.reconcile(id, dto, user); }
+  @Get('finance/reconciliation/:id') @ApiBearerAuth() async reconciliation(@Param('id') id: string, @CurrentUser() user: any) { const item = await this.service.one('financial_reconciliations', id); const calculation = await this.service.one('financial_calculations', item.calculation_id); if (user.role !== 'GOVERNMENT_ADMIN' && ![calculation.aggregator_id, calculation.recycler_id].includes(user.id)) throw new BadRequestException('Not allowed.'); return item; }
 }
 
-@Module({
-  controllers: [PaymentsController],
-  providers: [PaymentsService, SupabaseService],
-  exports: [PaymentsService],
-})
+@Module({ controllers: [PaymentsController], providers: [PaymentsService, SupabaseService, AuditService], exports: [PaymentsService] })
 export class PaymentsModule {}

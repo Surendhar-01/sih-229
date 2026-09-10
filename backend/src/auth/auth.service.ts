@@ -1,4 +1,5 @@
-import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, ConflictException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../config/supabase.service';
 import { AuditService } from '../audit/audit.service';
 import { RegisterRequestDto } from './dto/register-request.dto';
@@ -150,6 +151,7 @@ export class AuthService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly auditService: AuditService,
+    private readonly configService: ConfigService,
   ) {}
 
   async getProfile(userId: string) {
@@ -207,6 +209,43 @@ export class AuthService {
       throw new ForbiddenException('Public self-registration as GOVERNMENT_ADMIN is strictly prohibited.');
     }
 
+    if (this.supabaseService.isConfigured()) {
+      if (!dto.email) throw new Error('Email is required for Supabase registration.');
+      const { data, error } = await this.supabaseService.getAdminClient().auth.admin.createUser({
+        email: dto.email,
+        password: dto.password,
+        phone: dto.phone,
+        email_confirm: true,
+        user_metadata: {
+          full_name: dto.full_name,
+          role: dto.role,
+          phone: dto.phone,
+          preferred_language: dto.preferred_language || 'en',
+          general_location: dto.general_location,
+          business_name: dto.business_name,
+          vehicle_type: dto.vehicle_type,
+          cpcb_authorization_number: dto.cpcb_authorization_number,
+        },
+      });
+      if (error) {
+        this.logger.error(`Supabase registration failed: ${error.message}`);
+        if (error.message.toLowerCase().includes('already been registered')) {
+          throw new ConflictException('This email is already registered. Please sign in instead.');
+        }
+        throw new BadRequestException(error.message || 'Unable to create Supabase user.');
+      }
+      if (!data.user) throw new Error('Supabase did not create the user.');
+      const profile = await this.getProfile(data.user.id);
+      const signIn = await this.supabaseService.getClient().auth.signInWithPassword({
+        email: dto.email,
+        password: dto.password,
+      });
+      if (signIn.error || !signIn.data.session) {
+        throw new Error(signIn.error?.message || 'Account created, but session could not be started.');
+      }
+      return { success: true, message: 'Account created successfully.', profile, account_status: profile.account_status, session: signIn.data.session };
+    }
+
     const newId = `usr-${Date.now()}`;
     const isCitizen = dto.role === 'USER';
     const status = isCitizen ? 'ACTIVE' : 'PENDING';
@@ -247,6 +286,56 @@ export class AuthService {
       profile: newRecord,
       account_status: status,
     };
+  }
+
+  async login(identifier: string, password: string, selectedRole: string) {
+    if (!this.supabaseService.isConfigured()) {
+      throw new Error('Supabase is not configured on the backend.');
+    }
+    if (!identifier) throw new BadRequestException('Email or phone is required.');
+    if (selectedRole === 'GOVERNMENT_ADMIN') {
+      const adminEmail = this.configService.get<string>('ADMIN_LOGIN_EMAIL')?.trim().toLowerCase();
+      const adminPassword = this.configService.get<string>('ADMIN_LOGIN_PASSWORD');
+      if (!adminEmail || !adminPassword) {
+        throw new Error('Admin login credentials are not configured on the backend.');
+      }
+      if (identifier.trim().toLowerCase() !== adminEmail || password !== adminPassword) {
+        throw new UnauthorizedException('Invalid admin login credentials.');
+      }
+      identifier = adminEmail;
+    }
+    const credentials = identifier.includes('@')
+      ? { email: identifier, password }
+      : { phone: identifier, password };
+    const { data, error } = await this.supabaseService.getClient().auth.signInWithPassword(credentials);
+    if (error) throw new UnauthorizedException('Invalid login credentials.');
+    if (!data.session || !data.user) throw new Error('Supabase did not return an active session.');
+    let profile = await this.supabaseService.getUserProfile(data.user.id);
+    if (!profile) {
+      const metadata = data.user.user_metadata || {};
+      const requestedRole = ['USER', 'INFORMAL_AGGREGATOR', 'COLLECTION_COLLECTOR', 'AUTHORIZED_RECYCLER'].includes(metadata.role)
+        ? metadata.role
+        : 'USER';
+      const profileInsert = await this.supabaseService.getAdminClient().from('profiles').upsert({
+        id: data.user.id,
+        email: data.user.email,
+        phone: data.user.phone || metadata.phone || `NA_${data.user.id.slice(0, 10)}`,
+        role: requestedRole,
+        full_name: metadata.full_name || 'User',
+        preferred_language: metadata.preferred_language || 'en',
+        general_location: metadata.general_location || 'India',
+        account_status: requestedRole === 'USER' ? 'ACTIVE' : 'PENDING',
+        is_active: true,
+        is_verified: true,
+      }, { onConflict: 'id' });
+      if (profileInsert.error) throw new UnauthorizedException('Authenticated account profile could not be created.');
+      profile = await this.supabaseService.getUserProfile(data.user.id);
+    }
+    if (!profile) throw new UnauthorizedException('Authenticated account profile was not found.');
+    if (profile.role !== selectedRole) {
+      throw new ForbiddenException(`This account is registered as ${profile.role}. Please select the correct login role.`);
+    }
+    return { session: data.session, profile };
   }
 
   async getPendingAccounts() {

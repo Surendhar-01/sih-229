@@ -22,8 +22,39 @@ export class TraceabilityService {
     const { data } = await client
       .from('traceability_events')
       .select('*')
-      .order('timestamp', { ascending: true });
+      .order('created_at', { ascending: true });
     return data || [];
+  }
+
+  async appendEvent(event: {
+    lot_id: string;
+    event_type: string;
+    actor_id: string;
+    actor_role: string;
+    from_status?: string;
+    to_status?: string;
+    latitude?: number;
+    longitude?: number;
+    metadata?: any;
+  }) {
+    if (!this.supabaseService.isConfigured()) return;
+    try {
+      const client = this.supabaseService.getAdminClient();
+      await client.from('traceability_events').insert([
+        {
+          lot_id: event.lot_id,
+          event_type: event.event_type,
+          actor_id: event.actor_id,
+          actor_role: event.actor_role,
+          from_status: event.from_status,
+          to_status: event.to_status,
+          metadata: event.metadata || {},
+          created_at: new Date().toISOString(),
+        },
+      ]);
+    } catch (err) {
+      console.warn('Could not append traceability event:', err);
+    }
   }
 }
 

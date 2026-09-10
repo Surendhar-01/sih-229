@@ -1,23 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { UserRole, AccountStatus, UserProfile } from '../../types';
-import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+import { UserRole, UserProfile } from '../../types';
 import { apiClient } from '../../services/api';
 import { 
   Phone, 
   Mail, 
   ArrowRight, 
-  ShieldCheck, 
-  Zap, 
-  AlertCircle, 
-  CheckCircle2, 
-  Clock, 
+  ShieldCheck,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
   Lock,
-  Building2,
-  Truck,
-  Factory,
-  Landmark,
   UserCheck
 } from 'lucide-react';
 
@@ -26,10 +20,17 @@ export const LoginPage: React.FC = () => {
   const location = useLocation();
   const { setAuth } = useAuthStore();
 
-  const [loginMethod, setLoginMethod] = useState<'phone' | 'email'>('phone');
-  const [identifier, setIdentifier] = useState('+919876543210');
-  const [otpOrPass, setOtpOrPass] = useState('123456');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('USER');
+  const [loginMethod, setLoginMethod] = useState<'phone' | 'email'>('email');
+  const selectedRole = ((location.state as { selectedRole?: UserRole } | null)?.selectedRole || 'USER');
+  const defaultCredentials: Record<UserRole, { email: string; password: string }> = {
+    USER: { email: import.meta.env.VITE_DEMO_USER_EMAIL || '', password: import.meta.env.VITE_DEMO_USER_PASSWORD || '' },
+    INFORMAL_AGGREGATOR: { email: import.meta.env.VITE_DEMO_AGGREGATOR_EMAIL || '', password: import.meta.env.VITE_DEMO_AGGREGATOR_PASSWORD || '' },
+    COLLECTION_COLLECTOR: { email: import.meta.env.VITE_DEMO_COLLECTOR_EMAIL || '', password: import.meta.env.VITE_DEMO_COLLECTOR_PASSWORD || '' },
+    AUTHORIZED_RECYCLER: { email: import.meta.env.VITE_DEMO_RECYCLER_EMAIL || '', password: import.meta.env.VITE_DEMO_RECYCLER_PASSWORD || '' },
+    GOVERNMENT_ADMIN: { email: import.meta.env.VITE_DEMO_ADMIN_EMAIL || '', password: import.meta.env.VITE_DEMO_ADMIN_PASSWORD || '' },
+  };
+  const [identifier, setIdentifier] = useState(defaultCredentials[selectedRole].email);
+  const [otpOrPass, setOtpOrPass] = useState(defaultCredentials[selectedRole].password);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -73,89 +74,31 @@ export const LoginPage: React.FC = () => {
     setErrorMessage(null);
 
     try {
-      let token = `dev-mock-${selectedRole.toLowerCase()}`;
-      let userProfile: UserProfile = {
-        id: `usr-${selectedRole.toLowerCase()}-001`,
-        email: loginMethod === 'email' ? identifier : `${selectedRole.toLowerCase()}@ewaste.in`,
-        phone: loginMethod === 'phone' ? identifier : '+919876543210',
-        full_name: `${selectedRole === 'GOVERNMENT_ADMIN' ? 'CPCB Officer' : 'Verified ' + selectedRole.replace('_', ' ')}`,
-        role: selectedRole,
-        account_status: 'ACTIVE',
-        preferred_language: 'en',
-        general_location: 'Mumbai Metropolitan Region',
-        is_verified: true,
-      };
-
-      // 1. If remote Supabase Auth is configured, attempt real authentication
-      if (isSupabaseConfigured()) {
-        try {
-          if (loginMethod === 'email') {
-            const { data, error } = await supabase.auth.signInWithPassword({
-              email: identifier,
-              password: otpOrPass,
-            });
-            if (error) throw error;
-            if (data.session) {
-              token = data.session.access_token;
-            }
-          } else {
-            // OTP verification
-            const { data, error } = await supabase.auth.verifyOtp({
-              phone: identifier,
-              token: otpOrPass,
-              type: 'sms',
-            });
-            if (error) throw error;
-            if (data.session) {
-              token = data.session.access_token;
-            }
-          }
-
-          // Fetch profile from backend with verified JWT
-          const profileRes = await apiClient.get('/profile', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (profileRes.data?.data) {
-            userProfile = profileRes.data.data;
-          }
-        } catch (supabaseErr: any) {
-          console.warn('Supabase online auth bypassed for local dev mode:', supabaseErr.message);
-        }
-      }
+      const response = await apiClient.post('/auth/login', { identifier, password: otpOrPass, role: selectedRole });
+      const authResult = response.data || response;
+      const token = authResult.session.access_token;
+      const userProfile: UserProfile = authResult.profile;
 
       setAuth(userProfile, token);
       routeUserByStatusAndRole(userProfile);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Authentication failed. Please verify credentials.');
+      const message = err?.message || 'Authentication failed. Please verify credentials.';
+      setErrorMessage(message.toLowerCase().includes('failed to fetch')
+        ? 'Unable to reach the authentication service. Check that the backend is running, then try again.'
+        : message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fast one-click testing logins for reviewers and examiners
-  const quickLoginAs = (role: UserRole, status: AccountStatus = 'ACTIVE') => {
-    let token = `dev-mock-${role.toLowerCase()}`;
-    if (status === 'PENDING') token = `dev-mock-collector-pending`;
-
-    const mockUser: UserProfile = {
-      id: `usr-${role.toLowerCase()}-${status.toLowerCase()}`,
-      email: `${role.toLowerCase()}@ewaste.gov.in`,
-      phone: '+919876543210',
-      full_name: `${status === 'PENDING' ? 'Sunil Jadhav (Pending)' : 'Dev ' + role.replace('_', ' ')}`,
-      role,
-      account_status: status,
-      preferred_language: 'en',
-      general_location: 'Mumbai, Maharashtra',
-      is_verified: status === 'ACTIVE',
-      approval_notes: status === 'SUSPENDED' ? 'Flagged for irregular lead extraction audit.' : undefined,
-    };
-
-    setAuth(mockUser, token);
-    routeUserByStatusAndRole(mockUser);
-  };
-
   return (
     <div style={{ padding: '32px' }}>
+      <div style={{ marginBottom: 16 }}>
+        <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#64748b', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 600 }}>
+          <span>← Back to Platform Intro</span>
+        </Link>
+      </div>
+
       <div style={{ textAlign: 'center', marginBottom: 20 }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Platform Sign In</h2>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 4 }}>
@@ -183,48 +126,33 @@ export const LoginPage: React.FC = () => {
         </div>
       )}
 
-      {/* Quick Role Fast-Logins (Development & Grading Accelerator) */}
-      <div style={{ marginBottom: 20, padding: '14px', background: '#ffffff', borderRadius: 10, border: '1px solid var(--border-color)' }}>
-        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, textTransform: 'uppercase' }}>
-          <Zap size={14} /> One-Click Role Testing & Status Demonstrations
-        </div>
-        
-        {/* Active Roles */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, marginBottom: 8 }}>
-          <button type="button" onClick={() => quickLoginAs('USER')} className="btn-secondary" style={{ padding: '6px 8px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <UserCheck size={12} className="text-emerald-400" /> Citizen (Active)
-          </button>
-          <button type="button" onClick={() => quickLoginAs('INFORMAL_AGGREGATOR')} className="btn-secondary" style={{ padding: '6px 8px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Building2 size={12} className="text-amber-400" /> Aggregator (Active)
-          </button>
-          <button type="button" onClick={() => quickLoginAs('COLLECTION_COLLECTOR')} className="btn-secondary" style={{ padding: '6px 8px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Truck size={12} className="text-cyan-400" /> Collector (Active)
-          </button>
-          <button type="button" onClick={() => quickLoginAs('AUTHORIZED_RECYCLER')} className="btn-secondary" style={{ padding: '6px 8px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Factory size={12} className="text-purple-400" /> Recycler (Active)
-          </button>
-        </div>
-
-        {/* Government Admin & Edge Cases */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 6 }}>
-          <button type="button" onClick={() => quickLoginAs('GOVERNMENT_ADMIN')} className="btn-secondary" style={{ padding: '6px 8px', fontSize: '0.75rem', borderColor: 'rgba(244, 63, 94, 0.4)', color: '#fb7185', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Landmark size={12} /> CPCB Regulatory Admin
-          </button>
-          <button type="button" onClick={() => quickLoginAs('COLLECTION_COLLECTOR', 'PENDING')} className="btn-secondary" style={{ padding: '6px 8px', fontSize: '0.75rem', borderColor: 'rgba(245, 158, 11, 0.4)', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Clock size={12} /> Test: Pending Collector
-          </button>
-        </div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '10px 14px',
+          marginBottom: 18,
+          borderRadius: 8,
+          background: '#ecfdf5',
+          border: '1px solid #a7f3d0',
+          color: '#047857',
+          fontSize: '0.85rem',
+          fontWeight: 700,
+        }}
+      >
+        <UserCheck size={17} />
+        <span>Signing in as: {selectedRole.replace(/_/g, ' ')}</span>
       </div>
 
       {/* Standard Form Login */}
       <form onSubmit={handleLogin}>
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'none', marginBottom: 16 }}>
           <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: '#334155' }}>
             Target Platform Role
           </label>
           <select
-            value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value as UserRole)}
+            defaultValue={selectedRole}
             style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#f1f5f9', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
           >
             <option value="USER">Citizen / Household Consumer</option>
@@ -236,7 +164,7 @@ export const LoginPage: React.FC = () => {
         </div>
 
         {/* Auth Mode Toggle */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <div style={{ display: 'none', gap: 8, marginBottom: 16 }}>
           <button
             type="button"
             onClick={() => setLoginMethod('phone')}
@@ -315,11 +243,10 @@ export const LoginPage: React.FC = () => {
 
       <div style={{ marginTop: 20, textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
         Don't have an account?{' '}
-        <Link to="/register" style={{ color: '#10b981', fontWeight: 600, textDecoration: 'none' }}>
+        <Link to="/register" state={{ selectedRole }} style={{ color: '#10b981', fontWeight: 600, textDecoration: 'none' }}>
           Register Role Profile
         </Link>
       </div>
     </div>
   );
 };
-

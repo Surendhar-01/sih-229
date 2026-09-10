@@ -24,7 +24,7 @@ export class SupabaseService implements OnModuleInit {
 
   onModuleInit() {
     const supabaseUrl = this.configService.get<string>('SUPABASE_URL');
-    const anonKey = this.configService.get<string>('SUPABASE_ANON_KEY');
+    const anonKey = this.configService.get<string>('SUPABASE_PUBLISHABLE_KEY') || this.configService.get<string>('SUPABASE_ANON_KEY');
     const serviceRoleKey = this.configService.get<string>('SUPABASE_SERVICE_ROLE_KEY');
 
     if (
@@ -68,19 +68,40 @@ export class SupabaseService implements OnModuleInit {
   }
 
   async verifyAccessToken(token: string): Promise<AuthenticatedUserSession | null> {
-    // 1. Check if token is a dev mock token for local testing
     if (token.startsWith('dev-mock-')) {
       const parts = token.replace('dev-mock-', '').split('-');
       const role = (parts[0] || 'user').toUpperCase();
       const status = (parts[1] || 'active').toUpperCase();
 
+      let mappedId = `usr-${role.toLowerCase()}-001`;
+      let email = `${role.toLowerCase()}@ewaste.gov.in`;
+      let fullName = `Verified ${role.replace(/_/g, ' ')}`;
+
+      if (role === 'COLLECTION_COLLECTOR' || role === 'COLLECTOR') {
+        mappedId = '0653e3c1-2f1d-4f44-b46a-20b490595c6f';
+        email = 'collector@ewaste.gov.in';
+        fullName = 'Ramesh Babu';
+      } else if (role === 'INFORMAL_AGGREGATOR' || role === 'AGGREGATOR') {
+        mappedId = '0f9bb267-12ab-4cb9-a40d-58c38f73267f';
+        email = 'aggregator@ewaste.gov.in';
+        fullName = 'Ibrahim Khan';
+      } else if (role === 'AUTHORIZED_RECYCLER' || role === 'RECYCLER') {
+        mappedId = 'ba342f1f-c157-4708-b572-46beecccd868';
+        email = 'recycler@ewaste.gov.in';
+        fullName = 'EcoClean E-Waste Recyclers Pvt Ltd';
+      } else if (role === 'USER') {
+        mappedId = 'ff18a5bd-eccc-4ca5-9666-27be86895460';
+        email = 'citizen@ewaste.gov.in';
+        fullName = 'Citizen Demo';
+      }
+
       return {
-        id: `usr-${role.toLowerCase()}-001`,
-        email: `${role.toLowerCase()}@ewaste.gov.in`,
+        id: mappedId,
+        email,
         phone: '+919876543210',
         role: role === 'INFORMAL_AGGREGATOR' || role === 'COLLECTION_COLLECTOR' || role === 'AUTHORIZED_RECYCLER' || role === 'GOVERNMENT_ADMIN' ? role : (role === 'ADMIN' ? 'GOVERNMENT_ADMIN' : (role === 'AGGREGATOR' ? 'INFORMAL_AGGREGATOR' : (role === 'COLLECTOR' ? 'COLLECTION_COLLECTOR' : (role === 'RECYCLER' ? 'AUTHORIZED_RECYCLER' : 'USER')))),
         account_status: status || 'ACTIVE',
-        full_name: `Verified ${role.replace('_', ' ')}`,
+        full_name: fullName,
         preferred_language: 'en',
         general_location: 'Mumbai Central, Maharashtra',
       };
@@ -98,11 +119,14 @@ export class SupabaseService implements OnModuleInit {
 
       // Fetch user profile and active role from public tables
       const profile = await this.getUserProfile(data.user.id);
+      
+      const role = profile?.role || data.user.user_metadata?.role || 'USER';
+
       return {
         id: data.user.id,
         email: data.user.email,
         phone: data.user.phone || profile?.phone,
-        role: profile?.role || data.user.user_metadata?.role || 'USER',
+        role: role,
         account_status: profile?.account_status || 'ACTIVE',
         full_name: profile?.full_name || data.user.user_metadata?.full_name || 'User',
         preferred_language: profile?.preferred_language || 'en',
@@ -124,9 +148,13 @@ export class SupabaseService implements OnModuleInit {
         .eq('id', userId)
         .single();
 
-      if (error) return null;
+      if (error) {
+        const fallback = await client.from('profiles').select('*').eq('id', userId).single();
+        if (fallback.error || !fallback.data) return null;
+        return { ...fallback.data, role: fallback.data.role || 'USER' };
+      }
 
-      const roleName = data.user_roles?.[0]?.roles?.name || 'USER';
+      const roleName = data.user_roles?.[0]?.roles?.name || data.role || 'USER';
       return { ...data, role: roleName };
     } catch {
       return null;

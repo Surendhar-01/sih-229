@@ -11,7 +11,7 @@ export const AuthLayout: React.FC = () => {
             <Recycle size={26} color="var(--text-primary)" />
           </div>
           <div style={{ textAlign: 'left' }}>
-            <h1 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em' }}>India E-Waste DPI</h1>
+            <h1 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em' }}>ECOBRIDGES</h1>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Formalized Scrap & Circular Recovery Platform</p>
           </div>
         </Link>

@@ -25,6 +25,7 @@ async function runMigrations() {
     '06_step3_auth_and_approval_schema.sql',
     '07_step4_user_lot_creation_schema.sql',
     '08_step5_aggregator_workflow.sql',
+    '09_step6_collector_workflow.sql',
   ];
 
   for (const file of migrationFiles) {

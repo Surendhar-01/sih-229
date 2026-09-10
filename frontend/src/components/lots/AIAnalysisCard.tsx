@@ -74,7 +74,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
     : aiResult.material_category.replace(/_/g, ' ');
 
   return (
-    <div className="rounded-xl border border-slate-700 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-800/80 p-5 shadow-lg space-y-4">
+    <div className="ai-analysis-card rounded-2xl border border-slate-200 bg-white p-5 shadow-lg space-y-4">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
         <div className="flex items-center gap-2">
@@ -86,7 +86,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
               {t('lot.aiIdentified')}
             </h4>
             <p
-              className="text-base font-bold text-white capitalize"
+              className="text-base font-bold text-slate-900 capitalize"
               dangerouslySetInnerHTML={{ __html: displayName }}
             />
           </div>
@@ -111,7 +111,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
       {/* Possible Materials & Estimated Range */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
         {aiResult.possible_materials && aiResult.possible_materials.length > 0 && (
-          <div className="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
             <div className="flex items-center gap-1.5 text-slate-400 font-medium mb-1.5">
               <Cpu className="w-3.5 h-3.5 text-emerald-400" />
               <span>Recoverable Components</span>
@@ -120,7 +120,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
               {aiResult.possible_materials.map((mat, idx) => (
                 <span
                   key={idx}
-                  className="px-2 py-0.5 rounded bg-slate-700/80 text-slate-200 text-[11px]"
+                  className="px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-700 text-[11px]"
                 >
                   {mat}
                 </span>
@@ -130,7 +130,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
         )}
 
         {aiResult.estimated_value_range && (
-          <div className="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
             <div className="text-slate-400 font-medium mb-1">Estimated Indicative Range</div>
             <div className="text-base font-bold text-emerald-400">
               ₹{aiResult.estimated_value_range.min_inr} &ndash; ₹{aiResult.estimated_value_range.max_inr}
@@ -157,7 +157,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
         <button
           type="button"
           onClick={onChangeCategory}
-          className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition"
+          className="px-3 py-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 transition"
         >
           {t('lot.changeCategory')}
         </button>

@@ -208,6 +208,10 @@ export const ProfilePage: React.FC = () => {
                   { code: 'en', label: 'English (Default)' },
                   { code: 'hi', label: 'हिन्दी (Hindi)' },
                   { code: 'mr', label: 'मराठी (Marathi)' },
+                  { code: 'ta', label: 'தமிழ் (Tamil)' },
+                  { code: 'te', label: 'తెలుగు (Telugu)' },
+                  { code: 'kn', label: 'ಕನ್ನಡ (Kannada)' },
+                  { code: 'bn', label: 'বাংলা (Bengali)' },
                 ].map((lang) => (
                   <button
                     key={lang.code}

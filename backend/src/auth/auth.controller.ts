@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterRequestDto } from './dto/register-request.dto';
@@ -9,6 +9,7 @@ import { AccountStatusGuard } from '../common/guards/account-status.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { AllowedAccountStatuses } from '../common/decorators/account-statuses.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { LoginRequestDto } from './dto/login-request.dto';
 
 @ApiTags('Auth & Profiles')
 @Controller()
@@ -34,10 +35,24 @@ export class AuthController {
     return this.authService.updateProfile(user.id, dto);
   }
 
+  @Put('profile')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Replace permitted profile fields' })
+  async replaceProfile(@CurrentUser() user: any, @Body() dto: UpdateProfileDto) {
+    return this.authService.updateProfile(user.id, dto);
+  }
+
   @Post('auth/register')
   @ApiOperation({ summary: 'Register account request (Enforces PENDING for professional roles)' })
   async register(@Body() dto: RegisterRequestDto) {
     return this.authService.registerRequest(dto);
+  }
+
+  @Post('auth/login')
+  @ApiOperation({ summary: 'Login with Supabase email/password through the REST API' })
+  async login(@Body() dto: LoginRequestDto) {
+    return this.authService.login(dto.identifier || dto.email || '', dto.password, dto.role);
   }
 
   // --------------------------------------------------------------------------

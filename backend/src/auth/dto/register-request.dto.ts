@@ -2,6 +2,10 @@ import { IsNotEmpty, IsOptional, IsString, IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class RegisterRequestDto {
+  @ApiProperty({ example: 'SecurePass123!' })
+  @IsString()
+  @IsNotEmpty()
+  password: string;
   @ApiProperty({ example: 'Ramesh Babu' })
   @IsString()
   @IsNotEmpty()

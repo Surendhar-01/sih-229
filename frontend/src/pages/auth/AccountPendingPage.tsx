@@ -97,9 +97,9 @@ export const AccountPendingPage: React.FC = () => {
           width: '100%',
           padding: '40px',
           borderRadius: 16,
-          border: '1px solid rgba(245, 158, 11, 0.4)',
-          background: 'rgba(15, 23, 42, 0.96)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+          border: '1px solid #e2e8f0',
+          background: '#ffffff',
+          boxShadow: '0 20px 45px -18px rgba(15, 23, 42, 0.25)',
         }}
       >
         {/* Top Status Icon */}
@@ -109,7 +109,7 @@ export const AccountPendingPage: React.FC = () => {
               width: 72,
               height: 72,
               borderRadius: '50%',
-              background: 'rgba(245, 158, 11, 0.15)',
+              background: '#fffbeb',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -124,9 +124,9 @@ export const AccountPendingPage: React.FC = () => {
             <span
               className="badge"
               style={{
-                background: 'rgba(245, 158, 11, 0.2)',
+                background: '#fffbeb',
                 color: '#f59e0b',
-                border: '1px solid rgba(245, 158, 11, 0.4)',
+                border: '1px solid #fcd34d',
                 fontSize: '0.8rem',
                 padding: '4px 12px',
               }}
@@ -188,8 +188,11 @@ export const AccountPendingPage: React.FC = () => {
                   gap: 12,
                   padding: '8px 12px',
                   borderRadius: 6,
-                  background: idx === 0 ? 'rgba(16, 185, 129, 0.1)' : idx === 1 ? 'rgba(245, 158, 11, 0.1)' : '#f1f5f9',
-                  borderLeft: `3px solid ${idx === 0 ? '#10b981' : idx === 1 ? '#f59e0b' : '#334155'}`,
+                  background: idx === 0 ? '#ecfdf5' : idx === 1 ? '#fffbeb' : '#f8fafc',
+                  borderTop: `1px solid ${idx === 0 ? '#a7f3d0' : idx === 1 ? '#fde68a' : '#e2e8f0'}`,
+                  borderRight: `1px solid ${idx === 0 ? '#a7f3d0' : idx === 1 ? '#fde68a' : '#e2e8f0'}`,
+                  borderBottom: `1px solid ${idx === 0 ? '#a7f3d0' : idx === 1 ? '#fde68a' : '#e2e8f0'}`,
+                  borderLeft: `3px solid ${idx === 0 ? '#10b981' : idx === 1 ? '#f59e0b' : '#94a3b8'}`,
                 }}
               >
                 {idx === 0 ? (
