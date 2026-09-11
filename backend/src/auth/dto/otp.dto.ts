@@ -44,10 +44,10 @@ export class ResendOtpDto {
 }
 
 export class GoogleAuthSyncDto {
-  @ApiProperty({ description: 'Supabase Auth User ID' })
-  @IsNotEmpty()
+  @ApiProperty({ description: 'Supabase Auth User ID', required: false })
+  @IsOptional()
   @IsString()
-  supabase_user_id: string;
+  supabase_user_id?: string;
 
   @ApiProperty({ example: 'user@example.com' })
   @IsNotEmpty()

@@ -668,67 +668,168 @@ export class AuthService {
   }
 
   async syncGoogleProfile(dto: GoogleAuthSyncDto) {
-    if (!dto.email || !dto.supabase_user_id) {
-      throw new BadRequestException('Google authentication data incomplete.');
+    if (!dto.email) {
+      throw new BadRequestException('Email is required for Google authentication.');
     }
 
     let profile: any = null;
+    let userId = dto.supabase_user_id;
 
     if (this.supabaseService.isConfigured()) {
       const client = this.supabaseService.getAdminClient();
-      const { data } = await client.from('profiles').select('*').eq('id', dto.supabase_user_id).single();
-      profile = data;
 
+      // Check profiles by id if valid UUID provided
+      const isUuid = userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+      if (isUuid) {
+        const { data } = await client.from('profiles').select('*').eq('id', userId).single();
+        if (data) {
+          profile = data;
+        }
+      }
+
+      // If not found by ID, look up by email in profiles
+      if (!profile && dto.email) {
+        const { data } = await client.from('profiles').select('*').eq('email', dto.email).single();
+        if (data) {
+          profile = data;
+          userId = profile.id;
+        }
+      }
+
+      // If still not in profiles, check Supabase auth.users or create one
       if (!profile) {
-        const isCollector = dto.role === 'COLLECTION_COLLECTOR' || dto.role === 'INFORMAL_AGGREGATOR';
-        const status = isCollector ? 'ACTIVE' : 'PENDING';
+        try {
+          const { data: usersData } = await client.auth.admin.listUsers();
+          const existingAuthUser = usersData?.users?.find((u) => u.email?.toLowerCase() === dto.email.toLowerCase());
+          if (existingAuthUser) {
+            userId = existingAuthUser.id;
+          } else {
+            const { data: newUser, error: createErr } = await client.auth.admin.createUser({
+              email: dto.email,
+              email_confirm: true,
+              user_metadata: {
+                full_name: dto.full_name || 'Google User',
+                role: dto.role,
+              },
+            });
+            if (newUser?.user) {
+              userId = newUser.user.id;
+            } else if (createErr) {
+              this.logger.warn(`Could not create auth.user for Google sync: ${createErr.message}`);
+            }
+          }
+        } catch (err: any) {
+          this.logger.warn(`Supabase auth user check failed: ${err.message}`);
+        }
 
-        const newProfile = {
-          id: dto.supabase_user_id,
-          email: dto.email,
-          phone: `NA_${dto.supabase_user_id.slice(0, 10)}`,
-          role: dto.role,
-          full_name: dto.full_name || 'Google User',
-          preferred_language: 'en',
-          general_location: 'India',
-          account_status: status,
-          is_active: true,
-          is_verified: isCollector,
-        };
+        // If we have a valid Supabase auth user UUID, upsert to profiles
+        if (userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+          const isCollector = dto.role === 'COLLECTION_COLLECTOR' || dto.role === 'INFORMAL_AGGREGATOR';
+          const status = isCollector ? 'ACTIVE' : (dto.role === 'GOVERNMENT_ADMIN' ? 'ACTIVE' : 'PENDING');
 
-        const { data: inserted, error } = await client.from('profiles').upsert(newProfile).select().single();
-        if (error) {
-          this.logger.error(`Google profile sync error: ${error.message}`);
-        } else {
-          profile = inserted;
+          const newProfile = {
+            id: userId,
+            email: dto.email,
+            phone: `+91${Math.floor(6000000000 + Math.random() * 3999999999)}`,
+            role: dto.role,
+            full_name: dto.full_name || 'Google User',
+            preferred_language: 'en',
+            general_location: 'India',
+            account_status: status,
+            is_active: true,
+            is_verified: isCollector,
+          };
+
+          const { data: inserted, error } = await client.from('profiles').upsert(newProfile).select().single();
+          if (!error && inserted) {
+            profile = inserted;
+          } else if (error) {
+            this.logger.error(`Google profile sync upsert error: ${error.message}`);
+          }
+        }
+      }
+    }
+
+    // In-memory accounts lookup / fallback
+    if (!profile) {
+      for (const acc of this.accounts.values()) {
+        if (acc.email?.toLowerCase() === dto.email.toLowerCase()) {
+          profile = acc;
+          break;
         }
       }
     }
 
     if (!profile) {
+      const isCollector = dto.role === 'COLLECTION_COLLECTOR' || dto.role === 'INFORMAL_AGGREGATOR';
       profile = {
-        id: dto.supabase_user_id,
+        id: userId || `usr-google-${Date.now()}`,
         email: dto.email,
         phone: '+919876543210',
         full_name: dto.full_name || 'Google User',
         role: dto.role,
-        account_status: dto.role === 'COLLECTION_COLLECTOR' ? 'ACTIVE' : 'PENDING',
+        account_status: isCollector ? 'ACTIVE' : (dto.role === 'GOVERNMENT_ADMIN' ? 'ACTIVE' : 'PENDING'),
         preferred_language: 'en',
         general_location: 'India',
         is_verified: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      this.accounts.set(dto.supabase_user_id, profile);
+      this.accounts.set(profile.id, profile);
     }
 
+    // If collector, ensure active for self-service intake
     profile = await this.activateCollectorForSelfServiceIntake(profile);
+
+    // Issue authentic Supabase session if configured
+    let session: any = null;
+    if (this.supabaseService.isConfigured() && profile.email) {
+      try {
+        const admin = this.supabaseService.getAdminClient();
+        const client = this.supabaseService.getClient();
+        const linkRes = await admin.auth.admin.generateLink({
+          type: 'magiclink',
+          email: profile.email,
+        });
+
+        if (linkRes.data?.properties?.hashed_token) {
+          const verifyRes = await client.auth.verifyOtp({
+            token_hash: linkRes.data.properties.hashed_token,
+            type: 'magiclink',
+          });
+          if (verifyRes.data?.session) {
+            session = verifyRes.data.session;
+          }
+        }
+      } catch (err: any) {
+        this.logger.warn(`Supabase live session exchange fallback for Google user: ${err.message}`);
+      }
+    }
+
+    if (!session) {
+      session = {
+        access_token: `dev-mock-${profile.role.toLowerCase()}-${profile.account_status.toLowerCase()}`,
+        token_type: 'bearer',
+        expires_in: 3600,
+        user: { id: profile.id, email: profile.email, phone: profile.phone },
+      };
+    }
+
+    await this.auditService.logEvent({
+      actor_id: profile.id,
+      actor_role: profile.role,
+      action: 'GOOGLE_AUTH_VERIFIED',
+      entity_type: 'profiles',
+      entity_id: profile.id,
+      new_data: { email: profile.email, role: profile.role, status: profile.account_status },
+    });
 
     return {
       success: true,
       profile,
       role: profile.role,
       account_status: profile.account_status,
+      session,
     };
   }
 }
