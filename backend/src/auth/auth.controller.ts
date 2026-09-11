@@ -10,6 +10,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { AllowedAccountStatuses } from '../common/decorators/account-statuses.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { LoginRequestDto } from './dto/login-request.dto';
+import { SendOtpDto, VerifyOtpDto, ResendOtpDto, GoogleAuthSyncDto } from './dto/otp.dto';
 
 @ApiTags('Auth & Profiles')
 @Controller()
@@ -53,6 +54,33 @@ export class AuthController {
   @ApiOperation({ summary: 'Login with Supabase email/password through the REST API' })
   async login(@Body() dto: LoginRequestDto) {
     return this.authService.login(dto.identifier || dto.email || '', dto.password, dto.role);
+  }
+
+  // --------------------------------------------------------------------------
+  // Dynamic Secure Mobile OTP Endpoints (Universal across Collector, Recycler, Admin)
+  // --------------------------------------------------------------------------
+  @Post('auth/otp/send')
+  @ApiOperation({ summary: 'Generate and send dynamic secure 6-digit OTP' })
+  async sendOtp(@Body() dto: SendOtpDto) {
+    return this.authService.sendOtp(dto.phone, dto.role);
+  }
+
+  @Post('auth/otp/verify')
+  @ApiOperation({ summary: 'Verify dynamic OTP code and return authenticated Supabase session' })
+  async verifyOtp(@Body() dto: VerifyOtpDto) {
+    return this.authService.verifyOtp(dto.phone, dto.otp, dto.role);
+  }
+
+  @Post('auth/otp/resend')
+  @ApiOperation({ summary: 'Resend fresh OTP respecting 60s cooldown limit' })
+  async resendOtp(@Body() dto: ResendOtpDto) {
+    return this.authService.resendOtp(dto.phone, dto.role);
+  }
+
+  @Post('auth/google/sync')
+  @ApiOperation({ summary: 'Sync authenticated Google OAuth user profile with role' })
+  async syncGoogleProfile(@Body() dto: GoogleAuthSyncDto) {
+    return this.authService.syncGoogleProfile(dto);
   }
 
   // --------------------------------------------------------------------------

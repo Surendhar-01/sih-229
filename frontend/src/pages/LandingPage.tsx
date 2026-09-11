@@ -95,11 +95,17 @@ export const LandingPage: React.FC = () => {
       const text = event.results[0][0].transcript as string;
       setTranscript(text); setVoiceState('processing');
       try {
-        const response: any = await apiClient.post('/ai/voice-intent', { transcript: text, language: lang });
-        const intent = response?.data || response;
-        const role = intent?.role as UserRole | undefined;
+        const response: any = await apiClient.post('/voice/route', { transcript: text, language: lang, current_route: '/' });
+        const res = response?.data?.data || response?.data || response;
+        const role = (res?.entities?.target_role || res?.action?.includes('COLLECTOR') ? 'COLLECTION_COLLECTOR' : res?.action?.includes('RECYCLER') ? 'AUTHORIZED_RECYCLER' : res?.action?.includes('ADMIN') ? 'GOVERNMENT_ADMIN' : null) as UserRole | null;
         setVoiceState('success');
-        if (role) selectRole(role); else speak(t.helpText);
+        if (role) {
+          selectRole(role);
+        } else if (res?.spoken_response?.[lang]) {
+          speak(res.spoken_response[lang]);
+        } else {
+          speak(t.helpText);
+        }
       } catch { setVoiceState('error'); }
     };
     instance.start();

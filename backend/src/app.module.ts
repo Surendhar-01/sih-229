@@ -21,6 +21,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { AiModule } from './ai/ai.module';
 import { AdminModule } from './admin/admin.module';
 import { DatasetsModule } from './datasets/datasets.module';
+import { VoiceModule } from './voice/voice.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { DatasetsModule } from './datasets/datasets.module';
     AiModule,
     AdminModule,
     DatasetsModule,
+    VoiceModule,
   ],
   providers: [SupabaseService],
   exports: [SupabaseService],

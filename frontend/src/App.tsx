@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppRoutes } from './routes/AppRoutes';
+import { GlobalVoiceAssistant } from './components/voice/GlobalVoiceAssistant';
 import './i18n/i18n';
 import { useAuthStore } from './store/authStore';
 import i18n from './i18n/i18n';
@@ -35,6 +36,7 @@ export const App: React.FC = () => {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AppRoutes />
+        <GlobalVoiceAssistant />
       </BrowserRouter>
     </QueryClientProvider>
   );

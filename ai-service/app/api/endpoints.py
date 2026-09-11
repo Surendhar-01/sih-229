@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, UploadFile, File, Form
+from typing import Optional
 from app.schemas.ai_schemas import (
     ClassificationRequest,
     ClassificationResponse,
@@ -16,23 +17,70 @@ from app.schemas.ai_schemas import (
     VoiceIntentRequest,
     VoiceIntentResponse,
 )
+from app.schemas.voice_schemas import (
+    VoiceCommandRequest,
+    VoiceCommandResponse,
+    AudioTranscriptionResponse,
+)
 from app.services.mock_ai_service import MockAIService
+from app.services.voice_nlp_service import VoiceNLPService
+from app.services.whisper_service import WhisperService
 
 router = APIRouter()
+
+@router.post("/voice-command-nlp", response_model=VoiceCommandResponse)
+def parse_voice_command(req: VoiceCommandRequest):
+    """
+    Multilingual semantic intent and entity extraction for native Hindi, Marathi,
+    Hinglish, and English voice commands across the entire platform.
+    """
+    return VoiceNLPService.parse_command(req)
+
+@router.post("/transcribe-audio", response_model=AudioTranscriptionResponse)
+async def transcribe_audio_file(
+    file: UploadFile = File(...),
+    language: Optional[str] = Form(default=None),
+):
+    """
+    Transcribe raw audio file via Whisper STT supporting Hindi, Marathi, and English.
+    """
+    contents = await file.read()
+    result = WhisperService.transcribe_audio(
+        audio_bytes=contents,
+        filename=file.filename or "audio.wav",
+        language_hint=language,
+    )
+    return AudioTranscriptionResponse(
+        transcript=result.get("transcript", ""),
+        language=result.get("language", language or "en"),
+        confidence=result.get("confidence", 0.90),
+    )
 
 @router.post("/voice-intent", response_model=VoiceIntentResponse)
 def voice_intent(req: VoiceIntentRequest):
     """Map a browser-transcribed voice request to a safe, confirmation-required role."""
-    text = req.transcript.strip().lower()
-    role_keywords = {
-        "INFORMAL_AGGREGATOR": ("collector", "kabadi", "scrap collector", "कलेक्टर", "कबाड़ी", "कबाडी", "संकलक"),
-        "AUTHORIZED_RECYCLER": ("recycler", "recycling centre", "recycling center", "रीसायकलर", "रिसायकलर"),
-        "GOVERNMENT_ADMIN": ("government", "admin", "cpcb", "सरकार", "प्रशासन", "सरकारी"),
-        "USER": ("recycle my", "old mobile", "e-waste", "ewaste", "पुराना मोबाइल", "ई-वेस्ट", "ईवेस्ट"),
-    }
-    for role, words in role_keywords.items():
-        if any(word in text for word in words):
-            return VoiceIntentResponse(transcript=req.transcript, intent="ROLE_SELECTION", role=role, confidence=0.88)
+    # Use the advanced multilingual NLP service
+    parsed = VoiceNLPService.parse_command(VoiceCommandRequest(transcript=req.transcript))
+    role = None
+    if parsed.entities.get("target_role"):
+        role = parsed.entities["target_role"]
+    elif parsed.intent == "ROLE_SELECTION":
+        role = parsed.action
+    else:
+        text = req.transcript.strip().lower()
+        role_keywords = {
+            "INFORMAL_AGGREGATOR": ("collector", "kabadi", "scrap collector", "कलेक्टर", "कबाड़ी", "कबाडी", "संकलक"),
+            "AUTHORIZED_RECYCLER": ("recycler", "recycling centre", "recycling center", "रीसायकलर", "रिसायकलर"),
+            "GOVERNMENT_ADMIN": ("government", "admin", "cpcb", "सरकार", "प्रशासन", "सरकारी"),
+            "USER": ("recycle my", "old mobile", "e-waste", "ewaste", "पुराना मोबाइल", "ई-वेस्ट", "ईवेस्ट"),
+        }
+        for r, words in role_keywords.items():
+            if any(word in text for word in words):
+                role = r
+                break
+
+    if role:
+        return VoiceIntentResponse(transcript=req.transcript, intent="ROLE_SELECTION", role=role, confidence=0.92)
     return VoiceIntentResponse(transcript=req.transcript, intent="UNKNOWN", role=None, confidence=0.2)
 
 @router.get("/health", response_model=HealthResponse)
