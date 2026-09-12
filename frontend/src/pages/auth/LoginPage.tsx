@@ -51,6 +51,7 @@ export const LoginPage: React.FC = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [otpExpiresIn, setOtpExpiresIn] = useState(300);
+  const [devOtp, setDevOtp] = useState<string | null>(null);
 
   // Email / Password States
   const defaultEmails: Record<UserRole, { email: string; pass: string }> = {
@@ -88,8 +89,10 @@ export const LoginPage: React.FC = () => {
     setSelectedRole(newRole);
     setOtpSent(false);
     setOtp('');
+    setDevOtp(null);
     setErrorMessage(null);
     setSuccessMessage(null);
+    setDevOtp(null);
     setPhone(defaultPhones[newRole] || '9876543212');
     setEmail(defaultEmails[newRole]?.email || '');
     setPassword(defaultEmails[newRole]?.pass || '');
@@ -214,11 +217,14 @@ export const LoginPage: React.FC = () => {
         role: selectedRole,
       });
 
-      const data = res.data?.data || res.data;
+      // apiClient returns the response body directly; also support an Axios
+      // response or a gateway-wrapped response.
+      const data = res?.data?.data ?? res?.data ?? res ?? {};
       setOtpSent(true);
-      setResendCooldown(data.cooldown_seconds || 60);
-      setOtpExpiresIn(data.expires_in_seconds || 300);
-      setSuccessMessage(data.message || 'OTP sent successfully.');
+      setResendCooldown(data.cooldown_seconds ?? 60);
+      setOtpExpiresIn(data.expires_in_seconds ?? 300);
+      setDevOtp(import.meta.env.DEV && data.dev_debug_code ? String(data.dev_debug_code) : null);
+      setSuccessMessage(data.message ?? 'OTP sent successfully.');
       speakFeedback(
         activeLang === 'hi'
           ? 'आपके मोबाइल पर 6 अंकों का ओटीपी भेजा गया है। कृपया कोड दर्ज करें।'
@@ -252,9 +258,12 @@ export const LoginPage: React.FC = () => {
         role: selectedRole,
       });
 
-      const authResult = res.data?.data || res.data;
+      const authResult = res?.data?.data ?? res?.data ?? res ?? {};
       const token = authResult.session?.access_token;
-      const userProfile: UserProfile = authResult.profile;
+      const userProfile: UserProfile | undefined = authResult.profile;
+      if (!userProfile) {
+        throw new Error(authResult.message || 'OTP verification did not return a user profile.');
+      }
 
       setAuth(userProfile, token);
       speakFeedback(
@@ -780,6 +789,23 @@ export const LoginPage: React.FC = () => {
                   }}
                 />
               </div>
+
+              {devOtp && (
+                <div
+                  style={{
+                    marginBottom: 14,
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    background: '#fffbeb',
+                    border: '1px solid #fcd34d',
+                    color: '#92400e',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  Development OTP: <span style={{ letterSpacing: 2, fontSize: '1rem' }}>{devOtp}</span>
+                </div>
+              )}
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, fontSize: '0.8rem' }}>
                 <button
